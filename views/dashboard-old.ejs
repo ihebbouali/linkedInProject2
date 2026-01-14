@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">Iheb Profil</a>
+            <div>
+            <button type="button" class="btn btn-warning btn-sm me-2" data-bs-toggle="modal" data-bs-target="#viewCvModal">
+                Voir mon CV
+            </button>
+            <a href="/auth/logout" class="btn btn-danger btn-sm">Se déconnecter</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card shadow mb-4">
+                    <div class="card-body text-center">
+                        <img src="<%= user.photo_url %>" class="rounded-circle mb-3" width="150" height="150" style="object-fit: cover; border:3px solid #ddd">
+                        <h3><%= user.prenom %> <%= user.nom %></h3>
+                        <p class="text-muted"><%= user.email %></p>
+                        <p><%= user.summary || 'Ajoutez une description...' %></p>
+                        
+                        <button class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#editProfileModal">Modifier Profil</button>
+                    </div>
+                </div>
+                
+                <div class="card shadow">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Compétences</h5>
+                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addSkillModal">+</button>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <% user.skills.forEach(skill => { %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <%= skill.title %> <span class="badge bg-secondary"><%= skill.level %></span>
+                            <a href="/dashboard/skills/delete/<%= skill._id %>" class="text-danger small">X</a>
+                        </li>
+                        <% }) %>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Expériences Professionnelles</h5>
+                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addExpModal">+</button>
+                    </div>
+                    <div class="card-body">
+                        <% if(user.experiences.length === 0) { %>
+                            <p class="text-muted">Aucune expérience ajoutée.</p>
+                        <% } %>
+                        <% user.experiences.forEach(exp => { %>
+                            <div class="mb-3 border-bottom pb-3">
+                                <div class="d-flex justify-content-between">
+                                    <h5><%= exp.title %> <small class="text-muted">chez <%= exp.company %></small></h5>
+                                    <a href="/dashboard/experiences/delete/<%= exp._id %>" class="btn btn-outline-danger btn-sm">Supprimer</a>
+                                </div>
+                                <small class="text-muted">
+                                    <%= exp.startDate ? new Date(exp.startDate).toLocaleDateString() : '' %> - 
+                                    <%= exp.endDate ? new Date(exp.endDate).toLocaleDateString() : 'Présent' %>
+                                </small>
+                                <p class="mt-2"><%= exp.description %></p>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" action="/dashboard/update" method="POST" enctype="multipart/form-data">
+                <div class="modal-header"><h5 class="modal-title">Modifier Profil</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="text" name="nom" class="form-control mb-2" value="<%= user.nom %>" placeholder="Nom">
+                    <input type="text" name="prenom" class="form-control mb-2" value="<%= user.prenom %>" placeholder="Prénom">
+                    <input type="email" name="email" class="form-control mb-2" value="<%= user.email %>" placeholder="Email">
+                    <textarea name="summary" class="form-control mb-2" placeholder="À propos de vous..."><%= user.summary %></textarea>
+                    <label>Photo de profil</label>
+                    <input type="file" name="photo" class="form-control">
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addSkillModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" action="/dashboard/skills" method="POST">
+                <div class="modal-header"><h5 class="modal-title">Nouvelle Compétence</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="text" name="title" class="form-control mb-2" placeholder="Ex: React JS" required>
+                    <select name="level" class="form-control">
+                        <option value="Débutant">Débutant</option>
+                        <option value="Intermédiaire">Intermédiaire</option>
+                        <option value="Avancé">Avancé</option>
+                        <option value="Expert">Expert</option>
+                    </select>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-success">Ajouter</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addExpModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" action="/dashboard/experiences" method="POST">
+                <div class="modal-header"><h5 class="modal-title">Nouvelle Expérience</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="text" name="title" class="form-control mb-2" placeholder="Poste (ex: Développeur Web)" required>
+                    <input type="text" name="company" class="form-control mb-2" placeholder="Entreprise" required>
+                    <div class="row">
+                        <div class="col"><label>Début</label><input type="date" name="startDate" class="form-control mb-2"></div>
+                        <div class="col"><label>Fin</label><input type="date" name="endDate" class="form-control mb-2"></div>
+                    </div>
+                    <textarea name="description" class="form-control" placeholder="Description des tâches..."></textarea>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-success">Ajouter</button></div>
+            </form>
+        </div>
+    </div>
+    <div class="modal fade" id="viewCvModal" tabindex="-1" aria-labelledby="viewCvLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="max-width: 90%;">
+        <div class="modal-content" style="height: 90vh;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewCvLabel">Aperçu de mon CV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe src="/dashboard/download-cv?mode=view" width="100%" height="100%" style="border:none;">
+                    <p>Votre navigateur ne supporte pas les PDF.</p>
+                </iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                
+                <a href="/dashboard/download-cv?mode=download" class="btn btn-primary">
+                    Télécharger le fichier
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+</html>

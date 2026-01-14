@@ -10,7 +10,7 @@ exports.getRegister = (req, res) => {
 
 exports.register = async (req, res) => {
     try {
-        const { nom, prenom, email, password } = req.body;
+        const { nom, prenom, email, password, accountType, companyName, companyWebsite } = req.body;
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -18,15 +18,19 @@ exports.register = async (req, res) => {
         }
 
         const newUser = new User({
-            nom,
-            prenom,
+            nom: accountType === 'personal' ? nom : null,
+            prenom: accountType === 'personal' ? prenom : null,
             email,
-            password: password
+            password: password,
+            accountType: accountType || 'personal',
+            companyName: accountType === 'company' ? companyName : null,
+            companyWebsite: accountType === 'company' ? companyWebsite : null
         });
 
         await newUser.save();
 
         req.session.userId = newUser._id;
+        req.session.accountType = newUser.accountType;
         res.redirect('/dashboard');
 
     } catch (err) {
@@ -49,6 +53,7 @@ exports.login = async (req, res) => {
         }
 
         req.session.userId = user._id;
+        req.session.accountType = user.accountType;
         res.redirect('/dashboard');
     } catch (err) {
         console.error(err);

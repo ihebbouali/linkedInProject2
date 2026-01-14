@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offres d'emploi - Plateforme d'emploi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="bg-light">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-white bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="/dashboard">
+                <i class="bi bi-briefcase-fill"></i> JobConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard"><i class="bi bi-person-circle"></i> Mon Profil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/jobs"><i class="bi bi-briefcase"></i> Offres d'emploi</a>
+                    </li>
+                    <% if (user.accountType === 'company') { %>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/jobs/my-jobs/list"><i class="bi bi-building"></i> Mes Offres</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/jobs/post-job/form"><i class="bi bi-plus-circle"></i> Publier une Offre</a>
+                        </li>
+                    <% } %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/logout"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row mb-5">
+            <div class="col-md-8">
+                <h1><i class="bi bi-briefcase"></i> Offres d'emploi</h1>
+                <p class="text-muted">Trouvez l'opportunité parfaite pour votre carrière</p>
+            </div>
+            <% if (user.accountType === 'company') { %>
+                <div class="col-md-4 text-md-end">
+                    <a href="/jobs/post-job/form" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle"></i> Publier une offre
+                    </a>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Job Listings -->
+        <% if (jobs.length === 0) { %>
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle"></i> Aucune offre d'emploi disponible pour le moment.
+            </div>
+        <% } else { %>
+            <div class="row">
+                <div class="col-lg-8">
+                    <% jobs.forEach(job => { %>
+                        <div class="job-card" onclick="window.location.href='/jobs/<%= job._id %>';">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h3 class="job-title"><%= job.title %></h3>
+                                    <p class="job-company"><i class="bi bi-building"></i> <%= job.companyName %></p>
+                                </div>
+                                <% if (user.accountType === 'personal') { %>
+                                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openApplicationModal('<%= job._id %>');">
+                                        <i class="bi bi-send"></i> Postuler
+                                    </button>
+                                <% } %>
+                            </div>
+
+                            <div class="job-meta">
+                                <span class="job-meta-item"><i class="bi bi-geo-alt"></i> <%= job.location %></span>
+                                <span class="job-meta-item">
+                                    <i class="bi bi-briefcase"></i>
+                                    <% const jobTypes = {'full-time': 'CDI', 'part-time': 'Temps partiel', 'contract': 'Contrat', 'freelance': 'Freelance'} %>
+                                    <%= jobTypes[job.jobType] || job.jobType %>
+                                </span>
+                                <% if (job.salary) { %>
+                                    <span class="job-meta-item"><i class="bi bi-currency-euro"></i> <%= job.salary %></span>
+                                <% } %>
+                                <% const levels = {'entry': 'Débutant', 'mid': 'Intermédiaire', 'senior': 'Senior'} %>
+                                <span class="job-meta-item"><i class="bi bi-bar-chart"></i> <%= levels[job.experienceLevel] || job.experienceLevel %></span>
+                            </div>
+
+                            <p class="job-description"><%= job.description.substring(0, 200) %>...</p>
+
+                            <% if (job.skills && job.skills.length > 0) { %>
+                                <div class="job-skills">
+                                    <% job.skills.forEach(skill => { %>
+                                        <span class="skill-tag"><%= skill %></span>
+                                    <% }) %>
+                                </div>
+                            <% } %>
+
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar3"></i>
+                                    Publié le <%= new Date(job.createdAt).toLocaleDateString('fr-FR') %>
+                                </small>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0"><i class="bi bi-funnel"></i> Filtres</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted"><strong>Prochainement</strong></p>
+                            <p class="text-muted">Les filtres avancés seront disponibles bientôt.</p>
+                        </div>
+                    </div>
+
+                    <% if (user.accountType === 'personal') { %>
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-lightbulb"></i> Conseil</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Complétez votre profil avec vos compétences et expériences pour augmenter vos chances de succès!</p>
+                                <a href="/dashboard" class="btn btn-sm btn-outline-primary w-100">Aller à mon profil</a>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Application Modal -->
+    <div class="modal fade" id="applicationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" id="applicationForm">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-send"></i> Postuler</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Lettre de motivation</label>
+                        <textarea name="coverLetter" class="form-control" rows="5" placeholder="Parlez-nous de vous et de vos motivations..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Envoyer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentJobId = null;
+        const modal = new bootstrap.Modal(document.getElementById('applicationModal'));
+
+        function openApplicationModal(jobId) {
+            currentJobId = jobId;
+            modal.show();
+        }
+
+        document.getElementById('applicationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const coverLetter = document.querySelector('textarea[name="coverLetter"]').value;
+            
+            try {
+                const response = await fetch(`/jobs/${currentJobId}/apply`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ coverLetter })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('✓ Candidature envoyée avec succès!');
+                    modal.hide();
+                    document.getElementById('applicationForm').reset();
+                } else {
+                    alert('✗ ' + data.message);
+                }
+            } catch (error) {
+                alert('✗ Erreur lors de la candidature');
+                console.error(error);
+            }
+        });
+    </script>
+
+</body>
+</html>

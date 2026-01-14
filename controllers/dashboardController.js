@@ -18,7 +18,9 @@ exports.updateProfile = async (req, res) => {
             nom: req.body.nom,
             prenom: req.body.prenom,
             summary: req.body.summary,
-            email: req.body.email
+            email: req.body.email,
+            companyName: req.body.companyName,
+            companyWebsite: req.body.companyWebsite
         };
         if (req.file) {
             updates.photo_url = `/uploads/${req.file.filename}`;

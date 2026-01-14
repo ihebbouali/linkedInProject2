@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidatures - <%= job.title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="bg-light">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-white bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="/dashboard">
+                <i class="bi bi-briefcase-fill"></i> JobConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard"><i class="bi bi-person-circle"></i> Mon Profil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/jobs"><i class="bi bi-briefcase"></i> Offres d'emploi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/jobs/my-jobs/list"><i class="bi bi-building"></i> Mes Offres</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/logout"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <!-- Back Button -->
+        <a href="/jobs/my-jobs/list" class="btn btn-outline-secondary mb-4">
+            <i class="bi bi-arrow-left"></i> Retour à mes offres
+        </a>
+
+        <!-- Job Header -->
+        <div class="card mb-4 bg-primary text-white">
+            <div class="card-body">
+                <h2 class="card-title"><%= job.title %></h2>
+                <p class="mb-0"><i class="bi bi-geo-alt"></i> <%= job.location %></p>
+            </div>
+        </div>
+
+        <!-- Applications List -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-people"></i> Candidatures (<%= applications.length %>)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <% if (applications.length === 0) { %>
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                                <h5 class="mt-3">Aucune candidature</h5>
+                                <p class="text-muted">Aucun candidat n'a encore postulé pour cette offre</p>
+                            </div>
+                        <% } else { %>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Candidat</th>
+                                            <th>Email</th>
+                                            <th>Date de candidature</th>
+                                            <th>Statut</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% applications.forEach(app => { %>
+                                            <tr>
+                                                <td>
+                                                    <strong><%= app.applicant.prenom %> <%= app.applicant.nom %></strong>
+                                                </td>
+                                                <td><%= app.applicant.email %></td>
+                                                <td><%= new Date(app.appliedAt).toLocaleDateString('fr-FR') %></td>
+                                                <td>
+                                                    <% const statusClasses = {
+                                                        'pending': 'status-badge status-pending',
+                                                        'reviewed': 'status-badge status-reviewed',
+                                                        'accepted': 'status-badge status-accepted',
+                                                        'rejected': 'status-badge status-rejected'
+                                                    } %>
+                                                    <% const statusLabels = {
+                                                        'pending': 'En attente',
+                                                        'reviewed': 'Vue',
+                                                        'accepted': 'Acceptée',
+                                                        'rejected': 'Rejetée'
+                                                    } %>
+                                                    <span class="<%= statusClasses[app.status] %>">
+                                                        <%= statusLabels[app.status] %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="viewApplication('<%= app._id %>', '<%= app.applicant.prenom %> <%= app.applicant.nom %>', '<%= app.applicant.email %>', '<%= app.coverLetter || '' %>', '<%= app.status %>')">
+                                                        <i class="bi bi-eye"></i> Voir
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Detail Modal -->
+    <div class="modal fade" id="applicationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-circle"></i> Détails de la candidature</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Candidat</label>
+                        <p id="modalApplicantName"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email</label>
+                        <p id="modalApplicantEmail"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Lettre de motivation</label>
+                        <p id="modalCoverLetter" class="text-muted"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Changer le statut</label>
+                        <select id="modalStatus" class="form-control">
+                            <option value="pending">En attente</option>
+                            <option value="reviewed">Vue</option>
+                            <option value="accepted">Acceptée</option>
+                            <option value="rejected">Rejetée</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button type="button" class="btn btn-primary" id="saveStatusBtn">
+                        <i class="bi bi-check"></i> Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = new bootstrap.Modal(document.getElementById('applicationModal'));
+        let currentApplicationId = null;
+
+        function viewApplication(appId, name, email, coverLetter, status) {
+            currentApplicationId = appId;
+            document.getElementById('modalApplicantName').textContent = name;
+            document.getElementById('modalApplicantEmail').textContent = email;
+            document.getElementById('modalCoverLetter').textContent = coverLetter || 'Aucune lettre de motivation fournie';
+            document.getElementById('modalStatus').value = status;
+            modal.show();
+        }
+
+        document.getElementById('saveStatusBtn').addEventListener('click', async () => {
+            const newStatus = document.getElementById('modalStatus').value;
+            
+            try {
+                const response = await fetch(`/jobs/applications/${currentApplicationId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('✓ Statut mis à jour!');
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert('✗ Erreur: ' + data.message);
+                }
+            } catch (error) {
+                alert('✗ Erreur lors de la mise à jour');
+                console.error(error);
+            }
+        });
+    </script>
+
+</body>
+</html>

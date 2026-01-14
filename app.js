@@ -25,6 +25,7 @@ app.use(session({
 
 app.use('/auth', require('./routes/authRoutes'));
 app.use('/dashboard', require('./routes/dashboardRoutes'));
+app.use('/jobs', require('./routes/jobRoutes'));
 
 app.get('/', (req, res) => {
     res.redirect('/auth/login');

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= job.title %> - Plateforme d'emploi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="bg-light">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-white bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="/dashboard">
+                <i class="bi bi-briefcase-fill"></i> JobConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard"><i class="bi bi-person-circle"></i> Mon Profil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/jobs"><i class="bi bi-briefcase"></i> Offres d'emploi</a>
+                    </li>
+                    <% if (user.accountType === 'company') { %>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/jobs/my-jobs/list"><i class="bi bi-building"></i> Mes Offres</a>
+                        </li>
+                    <% } %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/logout"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Back Button -->
+                <a href="/jobs" class="btn btn-outline-secondary mb-4">
+                    <i class="bi bi-arrow-left"></i> Retour aux offres
+                </a>
+
+                <!-- Job Header -->
+                <div class="card mb-4 job-card" style="border-left: none;">
+                    <div class="card-body">
+                        <h1 class="job-title"><%= job.title %></h1>
+                        <p class="job-company"><i class="bi bi-building"></i> <%= job.companyName %></p>
+
+                        <div class="job-meta mb-4">
+                            <span class="job-meta-item"><i class="bi bi-geo-alt"></i> <%= job.location %></span>
+                            <% const jobTypes = {'full-time': 'CDI', 'part-time': 'Temps partiel', 'contract': 'Contrat', 'freelance': 'Freelance'} %>
+                            <span class="job-meta-item"><i class="bi bi-briefcase"></i> <%= jobTypes[job.jobType] || job.jobType %></span>
+                            <% if (job.salary) { %>
+                                <span class="job-meta-item"><i class="bi bi-currency-euro"></i> <%= job.salary %></span>
+                            <% } %>
+                            <% const levels = {'entry': 'Débutant', 'mid': 'Intermédiaire', 'senior': 'Senior'} %>
+                            <span class="job-meta-item"><i class="bi bi-bar-chart"></i> <%= levels[job.experienceLevel] || job.experienceLevel %></span>
+                            <span class="job-meta-item"><i class="bi bi-calendar"></i> <%= new Date(job.createdAt).toLocaleDateString('fr-FR') %></span>
+                        </div>
+
+                        <% if (user.accountType === 'personal') { %>
+                            <% if (hasApplied) { %>
+                                <div class="alert alert-success">
+                                    <i class="bi bi-check-circle"></i> Vous avez déjà postulé à cette offre
+                                </div>
+                            <% } else { %>
+                                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#applicationModal">
+                                    <i class="bi bi-send"></i> Postuler
+                                </button>
+                            <% } %>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Job Description -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="bi bi-file-text"></i> Description du Poste</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><%= job.description %></p>
+                    </div>
+                </div>
+
+                <!-- Required Skills -->
+                <% if (job.skills && job.skills.length > 0) { %>
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0"><i class="bi bi-star"></i> Compétences Requises</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="job-skills">
+                                <% job.skills.forEach(skill => { %>
+                                    <span class="skill-tag"><%= skill %></span>
+                                <% }) %>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Company Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="bi bi-building"></i> À propos de l'entreprise</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6><%= job.companyName %></h6>
+                        <p class="text-muted">Cliquez pour voir les autres offres de cette entreprise</p>
+                        <a href="/jobs?company=<%= job.company._id %>" class="btn btn-outline-primary w-100 btn-sm">
+                            <i class="bi bi-briefcase"></i> Voir autres offres
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Application Summary -->
+                <% if (user.accountType === 'personal') { %>
+                    <div class="card bg-primary-light">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-lightbulb"></i> Conseil</h5>
+                            <p>Avant de postuler, assurez-vous que votre profil est à jour avec vos compétences et expériences!</p>
+                            <a href="/dashboard" class="btn btn-sm btn-outline-primary w-100">Compléter mon profil</a>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0"><i class="bi bi-people"></i> Candidatures</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <p class="text-muted">Vous n'êtes pas le propriétaire de cette offre</p>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Modal -->
+    <div class="modal fade" id="applicationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" id="applicationForm">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-send"></i> Postuler pour ce poste</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6><%= job.title %></h6>
+                    <p class="text-muted mb-3"><%= job.companyName %></p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Lettre de motivation</label>
+                        <textarea name="coverLetter" class="form-control" rows="5" placeholder="Présentez-vous et expliquez pourquoi vous êtes un bon candidat..."></textarea>
+                        <small class="text-muted">Optionnel</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Envoyer la Candidature</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modal = new bootstrap.Modal(document.getElementById('applicationModal'));
+        const jobId = '<%= job._id %>';
+
+        document.getElementById('applicationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const coverLetter = document.querySelector('textarea[name="coverLetter"]').value;
+            
+            try {
+                const response = await fetch(`/jobs/${jobId}/apply`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ coverLetter })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('✓ Candidature envoyée avec succès!');
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert('✗ ' + data.message);
+                }
+            } catch (error) {
+                alert('✗ Erreur lors de la candidature');
+                console.error(error);
+            }
+        });
+    </script>
+
+</body>
+</html>

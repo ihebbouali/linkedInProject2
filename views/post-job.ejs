@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publier une offre - Plateforme d'emploi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="bg-light">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-white bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="/dashboard">
+                <i class="bi bi-briefcase-fill"></i> JobConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard"><i class="bi bi-person-circle"></i> Mon Profil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/jobs"><i class="bi bi-briefcase"></i> Offres d'emploi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/jobs/my-jobs/list"><i class="bi bi-building"></i> Mes Offres</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/jobs/post-job/form"><i class="bi bi-plus-circle"></i> Publier une Offre</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/logout"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-lg">
+                    <div class="card-header">
+                        <h2 class="card-title mb-0"><i class="bi bi-briefcase"></i> Publier une nouvelle offre d'emploi</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Remplissez les informations ci-dessous pour créer une nouvelle offre d'emploi</p>
+
+                        <form action="/jobs/post-job" method="POST">
+                            <!-- Job Title -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Titre du poste *</label>
+                                <input type="text" name="title" class="form-control" placeholder="Ex: Développeur React Senior" required>
+                                <small class="text-muted">Soyez descriptif et spécifique</small>
+                            </div>
+
+                            <!-- Job Description -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Description du poste *</label>
+                                <textarea name="description" class="form-control" rows="6" placeholder="Décrivez les responsabilités, les défis et ce que vous attendez du candidat..." required></textarea>
+                                <small class="text-muted">Minimum 50 caractères</small>
+                            </div>
+
+                            <!-- Location -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Localisation *</label>
+                                <input type="text" name="location" class="form-control" placeholder="Ex: Paris, Île-de-France, France" required>
+                            </div>
+
+                            <!-- Salary (Optional) -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Salaire (Optionnel)</label>
+                                <input type="text" name="salary" class="form-control" placeholder="Ex: 35 000 - 45 000 € / an">
+                                <small class="text-muted">Ex: 30-40k €/an, Selon expérience, Non divulgué</small>
+                            </div>
+
+                            <!-- Job Type -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Type d'emploi *</label>
+                                <select name="jobType" class="form-control" required>
+                                    <option value="">Sélectionner un type</option>
+                                    <option value="full-time">CDI - Temps plein</option>
+                                    <option value="part-time">Temps partiel</option>
+                                    <option value="contract">Contrat à durée déterminée</option>
+                                    <option value="freelance">Freelance / Mission</option>
+                                </select>
+                            </div>
+
+                            <!-- Experience Level -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Niveau d'expérience requis *</label>
+                                <select name="experienceLevel" class="form-control" required>
+                                    <option value="">Sélectionner un niveau</option>
+                                    <option value="entry">Débutant (0-1 an)</option>
+                                    <option value="mid">Intermédiaire (1-5 ans)</option>
+                                    <option value="senior">Senior (5+ ans)</option>
+                                </select>
+                            </div>
+
+                            <!-- Skills -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Compétences requises</label>
+                                <input type="text" name="skills" class="form-control" placeholder="Ex: React, Node.js, MongoDB, Docker (séparées par des virgules)">
+                                <small class="text-muted">Séparez les compétences par des virgules</small>
+                            </div>
+
+                            <!-- Company Info Display -->
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Entreprise:</strong> <%= user.companyName %>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="row mt-5">
+                                <div class="col-md-6">
+                                    <a href="/jobs/my-jobs/list" class="btn btn-outline-secondary w-100">
+                                        <i class="bi bi-arrow-left"></i> Annuler
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-plus-circle"></i> Publier l'offre
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Help Section -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="bi bi-question-circle"></i> Conseils</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Soyez clair et précis</strong> dans le titre du poste pour attirer les bons candidats</li>
+                            <li><strong>Décrivez en détail</strong> les responsabilités et les défis du rôle</li>
+                            <li><strong>Listez toutes les compétences</strong> requises pour le poste</li>
+                            <li><strong>Mentionnez le salaire</strong> si possible - les candidats apprécient la transparence</li>
+                            <li><strong>Soyez réaliste</strong> sur le niveau d'expérience requis</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
