@@ -6,7 +6,9 @@ const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     accountType: { type: String, enum: ['personal', 'company'], required: true },
-    photo_url: { type: String, default: '/images/default-avatar.png' },
+    photo_url: { type: String, default: function() {
+        return this.accountType === 'company' ? '/images/default-company.svg' : '/images/default-personal.svg';
+    }},
     summary: { type: String }, // À propos
     companyName: { type: String }, // Pour les comptes entreprise
     companyWebsite: { type: String }, // Pour les comptes entreprise
@@ -23,7 +25,10 @@ const UserSchema = new mongoose.Schema({
         endDate: Date,
         description: String
     }],
-    applications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'JobApplication' }]
+    applications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'JobApplication' }],
+    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);

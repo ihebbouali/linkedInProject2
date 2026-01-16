@@ -4,40 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Candidatures - <%= job.title %></title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🔷</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/notifications.js"></script>
 </head>
 <body class="bg-light">
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-white bg-white shadow-sm sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="/dashboard">
-                <i class="bi bi-briefcase-fill"></i> JobConnect
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard"><i class="bi bi-person-circle"></i> Mon Profil</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/jobs"><i class="bi bi-briefcase"></i> Offres d'emploi</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/jobs/my-jobs/list"><i class="bi bi-building"></i> Mes Offres</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/auth/logout"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <%- include('partials/navbar', { user, activePage: 'my-jobs' }) %>
 
     <div class="container py-5">
         <!-- Back Button -->
@@ -107,7 +83,12 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <button class="btn btn-sm btn-outline-primary" onclick="viewApplication('<%= app._id %>', '<%= app.applicant.prenom %> <%= app.applicant.nom %>', '<%= app.applicant.email %>', '<%= app.coverLetter || '' %>', '<%= app.status %>')">
+                                                    <button class="btn btn-sm btn-outline-primary view-app-btn" 
+                                                        data-id="<%= app._id %>"
+                                                        data-name="<%= app.applicant.prenom %> <%= app.applicant.nom %>"
+                                                        data-email="<%= app.applicant.email %>"
+                                                        data-cover="<%= app.coverLetter || '' %>"
+                                                        data-status="<%= app.status %>">
                                                         <i class="bi bi-eye"></i> Voir
                                                     </button>
                                                 </td>
@@ -168,14 +149,23 @@
         const modal = new bootstrap.Modal(document.getElementById('applicationModal'));
         let currentApplicationId = null;
 
-        function viewApplication(appId, name, email, coverLetter, status) {
-            currentApplicationId = appId;
-            document.getElementById('modalApplicantName').textContent = name;
-            document.getElementById('modalApplicantEmail').textContent = email;
-            document.getElementById('modalCoverLetter').textContent = coverLetter || 'Aucune lettre de motivation fournie';
-            document.getElementById('modalStatus').value = status;
-            modal.show();
-        }
+        // Event listener for view buttons
+        document.querySelectorAll('.view-app-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                const email = this.getAttribute('data-email');
+                const coverLetter = this.getAttribute('data-cover');
+                const status = this.getAttribute('data-status');
+                
+                currentApplicationId = id;
+                document.getElementById('modalApplicantName').textContent = name;
+                document.getElementById('modalApplicantEmail').textContent = email;
+                document.getElementById('modalCoverLetter').textContent = coverLetter || 'Aucune lettre de motivation fournie';
+                document.getElementById('modalStatus').value = status;
+                modal.show();
+            });
+        });
 
         document.getElementById('saveStatusBtn').addEventListener('click', async () => {
             const newStatus = document.getElementById('modalStatus').value;
@@ -190,14 +180,14 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    alert('✓ Statut mis à jour!');
+                    showNotification('success', 'Succès', 'Statut mis à jour avec succès!');
                     modal.hide();
-                    location.reload();
+                    setTimeout(() => location.reload(), 1500);
                 } else {
-                    alert('✗ Erreur: ' + data.message);
+                    showNotification('error', 'Erreur', data.message || 'Erreur lors de la mise à jour');
                 }
             } catch (error) {
-                alert('✗ Erreur lors de la mise à jour');
+                showNotification('error', 'Erreur', 'Erreur lors de la mise à jour');
                 console.error(error);
             }
         });

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %> - TalentFlow</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🔷</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/notifications.js"></script>
+</head>
+<body class="bg-light">
+
+    <%- include('partials/navbar', { user, activePage: 'messages' }) %>
+
+    <div class="page-container">
+        <div class="content-wrapper">
+            <div class="container py-5">
+        <!-- Back Button -->
+        <a href="javascript:history.back()" class="btn btn-outline-secondary mb-4">
+            <i class="bi bi-arrow-left"></i> Retour
+        </a>
+
+        <!-- Profile Header -->
+        <div class="profile-header mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center">
+                    <img src="<%= profileUser.photo_url %>" 
+                         onerror="this.src='/images/default-avatar.png'" 
+                         alt="<%= profileUser.prenom || profileUser.companyName %>" 
+                         class="profile-avatar">
+                </div>
+                <div class="col-md-9">
+                    <% if (profileUser.accountType === 'company') { %>
+                        <div class="profile-name"><%= profileUser.companyName %></div>
+                        <p class="profile-email"><%= profileUser.email %></p>
+                        <% if (profileUser.companyWebsite) { %>
+                            <p class="text-white"><i class="bi bi-globe"></i> <a href="<%= profileUser.companyWebsite %>" target="_blank" class="text-white"><%= profileUser.companyWebsite %></a></p>
+                        <% } %>
+                        <span class="account-badge badge-company"><i class="bi bi-building"></i> Compte Entreprise</span>
+                    <% } else { %>
+                        <div class="profile-name"><%= profileUser.prenom %> <%= profileUser.nom %></div>
+                        <p class="profile-email"><%= profileUser.email %></p>
+                        <span class="account-badge badge-personal"><i class="bi bi-person"></i> Compte Personnel</span>
+                    <% } %>
+                    <div class="mt-3">
+                        <% if (isFollowing) { %>
+                            <button class="btn btn-outline-primary me-2" onclick="unfollowUser()" id="followBtn">
+                                <i class="bi bi-check-circle"></i> Suivi
+                            </button>
+                        <% } else { %>
+                            <button class="btn btn-primary me-2" onclick="followUser()" id="followBtn">
+                                <i class="bi bi-plus-circle"></i> Suivre
+                            </button>
+                        <% } %>
+                        <button class="btn btn-success me-2" onclick="sendMessage()">
+                            <i class="bi bi-chat-dots"></i> Message
+                        </button>
+                        <button class="btn btn-danger" onclick="blockUser()">
+                            <i class="bi bi-x-circle"></i> Bloquer
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/dashboard/<%= profileUser._id %>/followers" class="text-decoration-none me-3">
+                            <strong><%= profileUser.followers ? profileUser.followers.length : 0 %></strong> Abonnés
+                        </a>
+                        <a href="/dashboard/<%= profileUser._id %>/following" class="text-decoration-none">
+                            <strong><%= profileUser.following ? profileUser.following.length : 0 %></strong> Abonnements
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="row">
+            <!-- Left Sidebar -->
+            <div class="col-lg-4 mb-4">
+                <!-- About Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="bi bi-info-circle"></i> À Propos</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><%= profileUser.summary || 'Aucune description disponible' %></p>
+                    </div>
+                </div>
+
+                <!-- Skills Section (Personal Accounts) -->
+                <% if (profileUser.accountType === 'personal' && profileUser.skills && profileUser.skills.length > 0) { %>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="bi bi-star"></i> Compétences</h5>
+                    </div>
+                    <div class="card-body">
+                        <% profileUser.skills.forEach(skill => { %>
+                            <div class="skill-item">
+                                <div>
+                                    <strong><%= skill.title %></strong>
+                                    <span class="skill-level"><%= skill.level %></span>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+
+            <!-- Right Content -->
+            <div class="col-lg-8">
+                <!-- Experiences (Personal) -->
+                <% if (profileUser.accountType === 'personal' && profileUser.experiences && profileUser.experiences.length > 0) { %>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="bi bi-briefcase"></i> Expériences</h5>
+                    </div>
+                    <div class="card-body">
+                        <% profileUser.experiences.forEach(exp => { %>
+                            <div class="experience-item">
+                                <h6><%= exp.title %></h6>
+                                <p class="text-muted mb-1"><%= exp.company %></p>
+                                <p class="text-muted mb-2">
+                                    <small>
+                                        <%= new Date(exp.startDate).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) %> - 
+                                        <% if (exp.current) { %>
+                                            Présent
+                                        <% } else { %>
+                                            <%= new Date(exp.endDate).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) %>
+                                        <% } %>
+                                    </small>
+                                </p>
+                                <p><%= exp.description %></p>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- No experiences message -->
+                <% if (profileUser.accountType === 'personal' && (!profileUser.experiences || profileUser.experiences.length === 0)) { %>
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-briefcase" style="font-size: 3rem; color: #ccc;"></i>
+                        <h5 class="mt-3">Aucune expérience ajoutée</h5>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function followUser() {
+        fetch('/dashboard/follow/<%= profileUser._id %>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            showNotification(data.message, 'success');
+            const btn = document.getElementById('followBtn');
+            btn.className = 'btn btn-outline-primary me-2';
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Suivi';
+            btn.onclick = unfollowUser;
+            location.reload();
+        })
+        .catch(err => {
+            console.error(err);
+            showNotification('Erreur', 'error');
+        });
+    }
+
+    function unfollowUser() {
+        fetch('/dashboard/unfollow/<%= profileUser._id %>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            showNotification(data.message, 'success');
+            const btn = document.getElementById('followBtn');
+            btn.className = 'btn btn-primary me-2';
+            btn.innerHTML = '<i class="bi bi-plus-circle"></i> Suivre';
+            btn.onclick = followUser;
+            location.reload();
+        })
+        .catch(err => {
+            console.error(err);
+            showNotification('Erreur', 'error');
+        });
+    }
+
+    function sendMessage() {
+        window.location.href = '/messages/start/<%= profileUser._id %>';
+    }
+
+    function blockUser() {
+        if (confirm('Voulez-vous vraiment bloquer cet utilisateur ?')) {
+            fetch('/messages/block/<%= profileUser._id %>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                showNotification(data.message, 'success');
+                setTimeout(() => window.location.href = '/dashboard', 1500);
+            })
+            .catch(err => {
+                console.error(err);
+                showNotification('Erreur lors du blocage', 'error');
+            });
+        }
+    }
+</script>
+
+</body>
+</html>

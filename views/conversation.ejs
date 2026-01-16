@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversation - TalentFlow</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🔷</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .chat-container {
+            height: 60vh;
+            overflow-y: auto;
+            padding: 1rem;
+            background-color: #f8f9fa;
+        }
+        .message {
+            margin-bottom: 1rem;
+            clear: both;
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+        .message.sent {
+            flex-direction: row-reverse;
+            justify-content: flex-start;
+        }
+        .message.received {
+            flex-direction: row;
+            justify-content: flex-start;
+        }
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .message-content {
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+        }
+        .message-bubble {
+            padding: 0.75rem 1rem;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+        .message.sent .message-bubble {
+            background-color: #0A66C2;
+            color: white;
+        }
+        .message.received .message-bubble {
+            background-color: white;
+            color: #000;
+            border: 1px solid #e1e1e1;
+        }
+        .message-time {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <%- include('partials/navbar', { user, activePage: 'messages' }) %>
+
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Back Button -->
+                <a href="/messages" class="btn btn-outline-secondary mb-3">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+
+                <div class="card">
+                    <!-- Chat Header -->
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <% 
+                                    const otherParticipant = conversation.participants.find(p => p.user._id.toString() !== user._id.toString());
+                                    const otherUser = otherParticipant ? otherParticipant.user : null;
+                                    const otherUserId = otherUser?._id;
+                                %>
+                                <a href="/dashboard/<%= otherUserId %>" style="text-decoration: none; color: inherit;">
+                                    <img src="<%= otherUser?.photo_url || '/images/default-avatar.png' %>" 
+                                         onerror="this.src='/images/default-avatar.png'" 
+                                         class="rounded-circle me-3" 
+                                         width="40" 
+                                         height="40" 
+                                         style="object-fit: cover; cursor: pointer; border: 2px solid white;">
+                                </a>
+                                <div>
+                                    <h6 class="mb-0">
+                                        <% if (otherUser?.accountType === 'company') { %>
+                                            <%= otherUser.companyName %>
+                                        <% } else { %>
+                                            <%= otherUser?.prenom %> <%= otherUser?.nom %>
+                                        <% } %>
+                                    </h6>
+                                    <small><%= otherUser?.email %></small>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="blockConversation(); return false;">
+                                        <i class="bi bi-x-circle"></i> Bloquer
+                                    </a></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteConversation(); return false;">
+                                        <i class="bi bi-trash"></i> Supprimer la conversation
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Job Application Info -->
+                    <% if (conversation.jobApplication) { %>
+                        <div class="alert alert-info mb-0 rounded-0">
+                            <i class="bi bi-briefcase"></i> Conversation liée à une candidature
+                        </div>
+                    <% } %>
+
+                    <!-- Chat Messages -->
+                    <div class="chat-container" id="chatContainer">
+                        <% messages.forEach(msg => { %>
+                            <% 
+                                const isSent = msg.sender._id.toString() === user._id.toString();
+                                const msgUser = isSent ? user : otherUser;
+                            %>
+                            <div class="message <%= isSent ? 'sent' : 'received' %>" data-message-id="<%= msg._id %>">
+                                <a href="/dashboard/<%= msgUser?._id %>" style="text-decoration: none;">
+                                    <img src="<%= msgUser?.photo_url || '/images/default-avatar.png' %>" 
+                                         onerror="this.src='/images/default-avatar.png'" 
+                                         class="message-avatar" 
+                                         alt="Avatar" 
+                                         style="background: #e0e0e0; cursor: pointer;">
+                                </a>
+                                <div class="message-content">
+                                    <div class="message-bubble <%= msg.deleted ? 'message-deleted' : '' %>" style="position: relative;">
+                                    
+                                    <% if (msg.deleted) { %>
+                                        <i class="bi bi-trash"></i> <%= msg.content %>
+                                    <% } else { %>
+                                        <%= msg.content %>
+                                        
+                                        <% if (msg.attachment && msg.attachment.filename) { %>
+                                            <a href="/<%= msg.attachment.path %>" target="_blank" class="message-attachment">
+                                                <i class="bi bi-file-earmark-pdf"></i>
+                                                <div class="attachment-info">
+                                                    <div class="attachment-name"><%= msg.attachment.filename %></div>
+                                                    <% if (msg.attachment.size) { %>
+                                                        <div class="attachment-size"><%= (msg.attachment.size / 1024).toFixed(2) %> KB</div>
+                                                    <% } %>
+                                                </div>
+                                            </a>
+                                        <% } %>
+                                        
+                                        <% if (msg.sender._id.toString() === user._id.toString() && !msg.deleted) { %>
+                                            <div class="message-actions">
+                                                <button class="message-action-btn" onclick="deleteMessage('<%= msg._id %>')">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        <% } %>
+                                    <% } %>
+                                    </div>
+                                    <div class="message-time">
+                                        <%= new Date(msg.createdAt).toLocaleString('fr-FR', { 
+                                            day: 'numeric', 
+                                            month: 'short', 
+                                            hour: '2-digit', 
+                                            minute: '2-digit' 
+                                        }) %>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+
+                    <!-- Message Input -->
+                    <div class="card-footer bg-white">
+                        <% if (user.accountType === 'personal') { %>
+                            <div id="cvPreview" class="chat-attachment-preview" style="display: none;">
+                                <i class="bi bi-file-earmark-pdf attachment-icon"></i>
+                                <div class="attachment-info">
+                                    <div class="attachment-name" id="cvFileName"></div>
+                                    <div class="attachment-size" id="cvFileSize"></div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearCV()">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        <% } %>
+                        
+                        <form id="messageForm" enctype="multipart/form-data">
+                            <div class="d-flex gap-2">
+                                <% if (user.accountType === 'personal') { %>
+                                    <input type="file" id="cvFileInput" name="cvFile" accept=".pdf,.doc,.docx" style="display: none;" onchange="handleCVSelect(this)">
+                                    <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('cvFileInput').click()">
+                                        <i class="bi bi-paperclip"></i>
+                                    </button>
+                                <% } %>
+                                <input type="text" id="messageInput" name="content" class="form-control" placeholder="Tapez votre message...">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send"></i> Envoyer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const conversationId = '<%= conversation._id %>';
+        const userId = '<%= user._id %>';
+        const userPhotoUrl = '<%= user.photo_url || "/images/default-avatar.png" %>';
+        const senderName = '<% if (user.accountType === "company") { %><%= user.companyName %><% } else { %><%= user.prenom %> <%= user.nom %><% } %>';
+        const chatContainer = document.getElementById('chatContainer');
+        const messageForm = document.getElementById('messageForm');
+        const messageInput = document.getElementById('messageInput');
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        scrollToBottom();
+
+        // Handle CV file selection
+        function handleCVSelect(input) {
+            const file = input.files[0];
+            if (file) {
+                const preview = document.getElementById('cvPreview');
+                document.getElementById('cvFileName').textContent = file.name;
+                document.getElementById('cvFileSize').textContent = (file.size / 1024).toFixed(2) + ' KB';
+                preview.style.display = 'flex';
+            }
+        }
+
+        function clearCV() {
+            const cvInput = document.getElementById('cvFileInput');
+            const cvPreview = document.getElementById('cvPreview');
+            if (cvInput) {
+                cvInput.value = '';
+            }
+            if (cvPreview) {
+                cvPreview.style.display = 'none';
+            }
+        }
+
+        // Send message with or without CV
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(messageForm);
+            const content = messageInput.value.trim();
+            const cvFileInput = document.getElementById('cvFileInput');
+            const cvFile = cvFileInput ? cvFileInput.files[0] : null;
+
+            if (!content && !cvFile) {
+                showNotification('warning', 'Attention', 'Veuillez saisir un message ou joindre un fichier');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/messages/${conversationId}/send`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    messageInput.value = '';
+                    clearCV();
+                    
+                    // Add message to UI immediately with avatar
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message sent';
+                    
+                    // Add avatar with link
+                    const avatarLink = document.createElement('a');
+                    avatarLink.href = '/dashboard/' + userId;
+                    avatarLink.style.textDecoration = 'none';
+                    
+                    const avatar = document.createElement('img');
+                    avatar.src = userPhotoUrl;
+                    avatar.onerror = function() { this.src = '/images/default-avatar.png'; };
+                    avatar.className = 'message-avatar';
+                    avatar.alt = 'Avatar';
+                    avatar.style.background = '#e0e0e0';
+                    avatar.style.cursor = 'pointer';
+                    
+                    avatarLink.appendChild(avatar);
+                    
+                    // Create message content wrapper
+                    const messageContent = document.createElement('div');
+                    messageContent.className = 'message-content';
+                    
+                    const bubble = document.createElement('div');
+                    bubble.className = 'message-bubble';
+                    bubble.textContent = data.data.content;
+                    
+                    if (data.data.attachment) {
+                        const attachmentLink = document.createElement('a');
+                        attachmentLink.href = '/' + data.data.attachment.path;
+                        attachmentLink.target = '_blank';
+                        attachmentLink.className = 'message-attachment';
+                        attachmentLink.innerHTML = `
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            <div class="attachment-info">
+                                <div class="attachment-name">${data.data.attachment.filename}</div>
+                                ${data.data.attachment.size ? `<div class="attachment-size">${(data.data.attachment.size / 1024).toFixed(2)} KB</div>` : ''}
+                            </div>
+                        `;
+                        bubble.appendChild(attachmentLink);
+                    }
+                    
+                    const time = document.createElement('div');
+                    time.className = 'message-time';
+                    time.textContent = new Date().toLocaleString('fr-FR', { 
+                        day: 'numeric', 
+                        month: 'short', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                    
+                    messageContent.appendChild(bubble);
+                    messageContent.appendChild(time);
+                    messageDiv.appendChild(avatarLink);
+                    messageDiv.appendChild(messageContent);
+                    chatContainer.appendChild(messageDiv);
+                    scrollToBottom();
+                    
+                    // Emit to socket for real-time update to other users
+                    socket.emit('sendMessage', {
+                        conversationId,
+                        senderName,
+                        content: data.data.content,
+                        attachment: data.data.attachment
+                    });
+                    
+                    showNotification('success', 'Succès', 'Message envoyé');
+                } else {
+                    showNotification('error', 'Erreur', data.message || 'Erreur lors de l\'envoi');
+                }
+            } catch (error) {
+                console.error(error);
+                showNotification('error', 'Erreur', 'Erreur lors de l\'envoi du message');
+            }
+        });
+
+        // Delete message
+        async function deleteMessage(messageId) {
+            if (!confirm('Voulez-vous vraiment supprimer ce message ?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/messages/${messageId}/delete`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Update UI
+                    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+                    const bubble = messageDiv.querySelector('.message-bubble');
+                    bubble.classList.add('message-deleted');
+                    bubble.innerHTML = '<i class="bi bi-trash"></i> Ce message a été supprimé';
+                    
+                    showNotification('success', 'Succès', 'Message supprimé');
+                } else {
+                    showNotification('error', 'Erreur', data.message || 'Erreur lors de la suppression');
+                }
+            } catch (error) {
+                console.error(error);
+                showNotification('error', 'Erreur', 'Erreur lors de la suppression');
+            }
+        }
+
+        // Receive new message
+        socket.on('newMessage', (data) => {
+            if (data.conversationId === conversationId) {
+                const isSent = data.message.sender === userId;
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'message-bubble';
+                
+                if (!isSent) {
+                    const senderName = document.createElement('div');
+                    senderName.className = 'fw-bold small mb-1';
+                    senderName.textContent = data.message.senderName;
+                    bubble.appendChild(senderName);
+                }
+                
+                const content = document.createTextNode(data.message.content);
+                bubble.appendChild(content);
+                
+                const time = document.createElement('div');
+                time.className = 'message-time';
+                time.textContent = new Date().toLocaleString('fr-FR', { 
+                    day: 'numeric', 
+                    month: 'short', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                messageDiv.appendChild(bubble);
+                messageDiv.appendChild(time);
+                chatContainer.appendChild(messageDiv);
+                
+                scrollToBottom();
+            }
+        });
+        
+        // Block user
+        async function blockConversation() {
+            const otherUserId = '<%= otherUser?._id %>';
+            if (!confirm('Voulez-vous vraiment bloquer cet utilisateur ?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/messages/block/${otherUserId}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification('success', 'Succès', 'Conversation bloquée');
+                    setTimeout(() => window.location.href = '/messages', 1500);
+                } else {
+                    showNotification('error', 'Erreur', data.message || 'Erreur');
+                }
+            } catch (error) {
+                console.error(error);
+                showNotification('error', 'Erreur', 'Erreur lors du blocage');
+            }
+        }
+        
+        // Delete conversation
+        async function deleteConversation() {
+            if (!confirm('Voulez-vous vraiment supprimer cette conversation ? Cette action est irréversible.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/messages/conversation/${conversationId}/delete`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification('success', 'Succès', 'Conversation supprimée');
+                    setTimeout(() => window.location.href = '/messages', 1500);
+                } else {
+                    showNotification('error', 'Erreur', data.message || 'Erreur');
+                }
+            } catch (error) {
+                console.error(error);
+                showNotification('error', 'Erreur', 'Erreur lors de la suppression');
+            }
+        }
+    </script>
+
+</body>
+</html>

@@ -3,108 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mes offres d'emploi - Plateforme d'emploi</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</head>
-<body class="bg-light">
+    <title>Mes Offres d'emploi - TalentFlow</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🔷</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">    <link rel="stylesheet" href="/css/style.css">    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script></head><body class="bg-light">    <%- include('partials/navbar', { user, activePage: 'my-jobs' }) %>    <div class="container py-5">        <div class="row mb-4">            <div class="col-md-8">                <h1><i class="bi bi-building"></i> Mes Offres d'emploi</h1>                <p class="text-muted">Gérez toutes vos offres publiées</p>            </div>            <div class="col-md-4 text-md-end">                <a href="/jobs/post-job/form" class="btn btn-primary btn-lg">                    <i class="bi bi-plus-circle"></i> Nouvelle Offre                </a>            </div>        </div>        <!-- Statistics Cards -->        <div class="row mb-4">            <div class="col-md-4">                <div class="card bg-primary text-white">                    <div class="card-body">                        <div class="d-flex justify-content-between align-items-center">                            <div>                                <h6 class="text-uppercase small mb-1">Total Offres</h6>                                <h2 class="mb-0"><%= jobs.length %></h2>                            </div>                            <i class="bi bi-briefcase" style="font-size: 2.5rem; opacity: 0.5;"></i>                        </div>                    </div>                </div>            </div>            <div class="col-md-4">                <div class="card bg-success text-white">                    <div class="card-body">                        <div class="d-flex justify-content-between align-items-center">                            <div>                                <h6 class="text-uppercase small mb-1">Candidatures</h6>                                <h2 class="mb-0">                                    <%= jobs.reduce((sum, job) => sum + (job.applications?.length || 0), 0) %>                                </h2>                            </div>                            <i class="bi bi-people" style="font-size: 2.5rem; opacity: 0.5;"></i>                        </div>                    </div>                </div>            </div>            <div class="col-md-4">                <div class="card bg-info text-white">                    <div class="card-body">                        <div class="d-flex justify-content-between align-items-center">                            <div>                                <h6 class="text-uppercase small mb-1">Offres actives</h6>                                <h2 class="mb-0"><%= jobs.length %></h2>                            </div>                            <i class="bi bi-graph-up" style="font-size: 2.5rem; opacity: 0.5;"></i>                        </div>                    </div>                </div>            </div>        </div>        <!-- Jobs List -->        <% if (jobs.length === 0) { %>            <div class="card">                <div class="card-body text-center py-5">                    <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>                    <h5 class="mt-3">Aucune offre publiée</h5>                    <p class="text-muted">Commencez par publier votre première offre d'emploi</p>                    <a href="/jobs/post-job/form" class="btn btn-primary">                        <i class="bi bi-plus-circle"></i> Publier une offre                    </a>                </div>            </div>        <% } else { %>            <div class="row">                <% jobs.forEach(job => { %>                    <div class="col-md-6 mb-4">                        <div class="card h-100 hover-shadow">                            <div class="card-body">                                <div class="d-flex justify-content-between align-items-start mb-3">                                    <h5 class="card-title text-primary mb-0"><%= job.title %></h5>                                    <div class="dropdown">                                        <button class="btn btn-sm btn-link text-dark" data-bs-toggle="dropdown">                                            <i class="bi bi-three-dots-vertical"></i>                                        </button>                                        <ul class="dropdown-menu">                                            <li><a class="dropdown-item" href="/jobs/<%= job._id %>">                                                <i class="bi bi-eye"></i> Voir l'offre                                            </a></li>                                            <li><a class="dropdown-item" href="/jobs/my-jobs/<%= job._id %>/applications">                                                <i class="bi bi-people"></i> Candidatures (<%= job.applications?.length || 0 %>)                                            </a></li>                                            <li><hr class="dropdown-divider"></li>                                            <li><a class="dropdown-item text-danger" href="/jobs/my-jobs/<%= job._id %>/delete" onclick="return confirm('Supprimer cette offre ?')">                                                <i class="bi bi-trash"></i> Supprimer                                            </a></li>                                        </ul>                                    </div>                                </div>                                <div class="mb-3">                                    <span class="badge bg-secondary me-2"><i class="bi bi-geo-alt"></i> <%= job.location %></span>                                    <% const jobTypes = {'full-time': 'CDI', 'part-time': 'Temps partiel', 'contract': 'Contrat', 'freelance': 'Freelance'} %>                                    <span class="badge bg-secondary me-2"><%= jobTypes[job.jobType] %></span>                                    <% const levels = {'entry': 'Débutant', 'mid': 'Intermédiaire', 'senior': 'Senior'} %>                                    <span class="badge bg-secondary"><%= levels[job.experienceLevel] %></span>                                </div>
+                                <p class="card-text text-muted small">
+                                    <%= job.description.substring(0, 120) %>...
+                                </p>
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-white bg-white shadow-sm sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="/dashboard">
-                <i class="bi bi-briefcase-fill"></i> JobConnect
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard"><i class="bi bi-person-circle"></i> Mon Profil</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/jobs"><i class="bi bi-briefcase"></i> Offres d'emploi</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/jobs/my-jobs/list"><i class="bi bi-building"></i> Mes Offres</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/jobs/post-job/form"><i class="bi bi-plus-circle"></i> Publier une Offre</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/auth/logout"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container py-5">
-        <div class="row mb-5">
-            <div class="col-md-8">
-                <h1><i class="bi bi-briefcase"></i> Mes offres d'emploi</h1>
-                <p class="text-muted">Gérez vos offres et consultez les candidatures</p>
-            </div>
-            <div class="col-md-4 text-md-end">
-                <a href="/jobs/post-job/form" class="btn btn-primary btn-lg">
-                    <i class="bi bi-plus-circle"></i> Nouvelle offre
-                </a>
-            </div>
-        </div>
-
-        <!-- Jobs List -->
-        <% if (jobs.length === 0) { %>
-            <div class="card text-center">
-                <div class="card-body py-5">
-                    <i class="bi bi-briefcase" style="font-size: 3rem; color: #ccc;"></i>
-                    <h5 class="mt-3">Aucune offre d'emploi</h5>
-                    <p class="text-muted">Vous n'avez pas encore créé d'offre d'emploi</p>
-                    <a href="/jobs/post-job/form" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Publier une offre
-                    </a>
-                </div>
-            </div>
-        <% } else { %>
-            <div class="row">
-                <% jobs.forEach(job => { %>
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="card-title mb-0"><%= job.title %></h5>
-                            </div>
-                            <div class="card-body">
-                                <p class="text-muted mb-2"><%= job.location %></p>
-                                <p class="card-text"><%= job.description.substring(0, 100) %>...</p>
-
-                                <div class="mt-3">
-                                    <% const jobTypes = {'full-time': 'CDI', 'part-time': 'Temps partiel', 'contract': 'Contrat', 'freelance': 'Freelance'} %>
-                                    <span class="badge bg-info"><%= jobTypes[job.jobType] %></span>
-                                    <% if (job.salary) { %>
-                                        <span class="badge bg-success"><i class="bi bi-currency-euro"></i> <%= job.salary %></span>
-                                    <% } %>
-                                    <span class="badge bg-secondary"><%= new Date(job.createdAt).toLocaleDateString('fr-FR') %></span>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div>
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar"></i>
+                                            <%= new Date(job.createdAt).toLocaleDateString('fr-FR') %>
+                                        </small>
+                                    </div>
+                                    <div>
+                                        <span class="badge <%= (job.applications?.length || 0) > 0 ? 'bg-success' : 'bg-secondary' %>">
+                                            <i class="bi bi-people"></i> <%= job.applications?.length || 0 %> candidature(s)
+                                        </span>
+                                    </div>
                                 </div>
 
-                                <div class="mt-3">
-                                    <small class="text-muted">
-                                        <i class="bi bi-people"></i> 
-                                        <strong><%= job.applications ? job.applications.length : 0 %> candidature(s)</strong>
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <div class="btn-group w-100" role="group">
-                                    <a href="/jobs/my-jobs/<%= job._id %>/applications" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-people"></i> Candidatures
+                                <div class="mt-3 d-flex gap-2">
+                                    <a href="/jobs/my-jobs/<%= job._id %>/applications" class="btn btn-primary btn-sm flex-grow-1">
+                                        <i class="bi bi-people"></i> Voir candidatures
                                     </a>
-                                    <a href="/jobs/<%= job._id %>" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-eye"></i> Voir
-                                    </a>
-                                    <a href="/jobs/my-jobs/<%= job._id %>/delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Êtes-vous sûr?');">
-                                        <i class="bi bi-trash"></i> Supprimer
+                                    <a href="/jobs/<%= job._id %>" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i>
                                     </a>
                                 </div>
                             </div>
@@ -114,6 +39,16 @@
             </div>
         <% } %>
     </div>
+
+    <style>
+        .hover-shadow {
+            transition: all 0.3s ease;
+        }
+        .hover-shadow:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+    </style>
 
 </body>
 </html>

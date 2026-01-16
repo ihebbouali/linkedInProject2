@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messagerie - TalentFlow</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🔷</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="bg-light">
+
+    <%- include('partials/navbar', { user, activePage: 'messages' }) %>
+
+    <div class="page-container">
+        <div class="content-wrapper">
+            <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="bi bi-chat-dots"></i> Messagerie</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Search Bar -->
+                        <div class="mb-3">
+                            <input type="text" id="searchConversations" class="form-control" placeholder="Rechercher une conversation...">
+                        </div>
+                        
+                        <% if (conversations.length === 0) { %>
+                            <div class="text-center py-5">
+                                <i class="bi bi-chat-dots" style="font-size: 4rem; color: #ccc;"></i>
+                                <h5 class="mt-3">Aucune conversation</h5>
+                                <p class="text-muted">Vos conversations apparaîtront ici après avoir postulé à une offre d'emploi.</p>
+                            </div>
+                        <% } else { %>
+                            <div class="list-group">
+                                <% conversations.forEach(conv => { %>
+                                    <% 
+                                        const otherParticipant = conv.participants.find(p => p.user._id.toString() !== user._id.toString());
+                                        const otherUser = otherParticipant ? otherParticipant.user : null;
+                                    %>
+                                    <a href="/messages/<%= conv._id %>" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 align-items-center">
+                                            <img src="<%= otherUser?.photo_url || '/images/default-avatar.png' %>" 
+                                                 onerror="this.src='/images/default-avatar.png'" 
+                                                 class="rounded-circle me-3" 
+                                                 width="50" 
+                                                 height="50" 
+                                                 style="object-fit: cover; background: #e0e0e0;">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h6 class="mb-1">
+                                                        <% if (otherUser?.accountType === 'company') { %>
+                                                            <%= otherUser.companyName %>
+                                                        <% } else { %>
+                                                            <%= otherUser?.prenom %> <%= otherUser?.nom %>
+                                                        <% } %>
+                                                    </h6>
+                                                    <small class="text-muted">
+                                                        <%= new Date(conv.lastMessageAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) %>
+                                                    </small>
+                                                </div>
+                                                <p class="mb-1 text-muted small"><%= conv.lastMessage %></p>
+                                                <% if (conv.jobApplication) { %>
+                                                    <span class="badge bg-primary small">
+                                                        <i class="bi bi-briefcase"></i> Candidature
+                                                    </span>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </a>
+                                <% }) %>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// Search conversations
+document.getElementById('searchConversations')?.addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const conversations = document.querySelectorAll('.list-group-item');
+    
+    conversations.forEach(conv => {
+        const name = conv.querySelector('h6').textContent.toLowerCase();
+        if (name.includes(searchTerm)) {
+            conv.style.display = '';
+        } else {
+            conv.style.display = 'none';
+        }
+    });
+});
+</script>
+
+</body>
+</html>

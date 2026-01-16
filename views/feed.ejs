@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fil d'actualité - TalentFlow</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🔷</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="bg-light"> 
+
+    <%- include('partials/navbar', { user, activePage: 'feed' }) %>
+
+    <div class="page-container">
+        <div class="content-wrapper">
+            <div class="container py-5">
+        <div class="row">
+            <!-- Left Sidebar - Profile Card -->
+            <div class="col-lg-3 d-none d-lg-block">
+                <div class="card sticky-top" style="top: 80px;">
+                    <div class="card-body text-center">
+                        <img src="<%= user.photo_url %>" class="rounded-circle mb-2" width="80" height="80" style="object-fit: cover;">
+                        <h6 class="mb-1">
+                            <% if (user.accountType === 'company') { %>
+                                <%= user.companyName %>
+                            <% } else { %>
+                                <%= user.prenom %> <%= user.nom %>
+                            <% } %>
+                        </h6>
+                        <p class="text-muted small"><%= user.email %></p>
+                        <a href="/dashboard" class="btn btn-sm btn-outline-primary w-100">Voir le profil</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Feed -->
+            <div class="col-lg-6">
+                
+                <!-- Search Bar -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0" id="searchInput" placeholder="Rechercher des profils..." onkeyup="searchProfiles()">
+                        </div>
+                        
+                        <!-- Search Results -->
+                        <div id="searchResults" class="mt-3" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">Résultats de recherche</h6>
+                                <button class="btn btn-sm btn-link" onclick="clearSearch()">
+                                    <i class="bi bi-x"></i> Fermer
+                                </button>
+                            </div>
+                            <div id="resultsContainer"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Create Post Card -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <button class="btn btn-light w-100 text-start" data-bs-toggle="modal" data-bs-target="#createPostModal">
+                            <i class="bi bi-pencil-square"></i> Créer une publication...
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feed Items -->
+                <% if (feedItems.length === 0) { %>
+                    <div class="alert alert-info text-center">
+                        <i class="bi bi-info-circle"></i> Aucune publication pour le moment
+                    </div>
+                <% } %>
+
+                <% feedItems.forEach(item => { %>
+                    <% if (item.type === 'post') { %>
+                        <!-- Post Card -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start mb-3">
+                                    <img src="<%= item.data.author.photo_url || '/images/default-avatar.png' %>" class="rounded-circle me-3" width="50" height="50" style="object-fit: cover;">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0">
+                                            <% if (item.data.author.accountType === 'company') { %>
+                                                <%= item.data.author.companyName %>
+                                            <% } else { %>
+                                                <%= item.data.author.prenom %> <%= item.data.author.nom %>
+                                            <% } %>
+                                        </h6>
+                                        <small class="text-muted">
+                                            <%= new Date(item.data.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                                        </small>
+                                    </div>
+                                    <% if (item.data.author._id.toString() === user._id.toString()) { %>
+                                        <a href="/feed/<%= item.data._id %>/delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette publication ?')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    <% } %>
+                                </div>
+
+                                <p class="mb-3"><%= item.data.content %></p>
+
+                                <% if (item.data.image) { %>
+                                    <img src="<%= item.data.image %>" class="img-fluid rounded mb-3" alt="Post image">
+                                <% } %>
+
+                                <div class="border-top pt-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <button class="btn btn-sm btn-link text-decoration-none like-btn" data-post-id="<%= item.data._id %>">
+                                            <i class="bi <%= item.data.likes.includes(user._id) ? 'bi-heart-fill text-danger' : 'bi-heart' %>"></i>
+                                            <span class="like-count"><%= item.data.likes.length %></span>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-decoration-none" data-bs-toggle="collapse" data-bs-target="#comments<%= item.data._id %>">
+                                            <i class="bi bi-chat"></i> <%= item.data.comments.length %> commentaires
+                                        </button>
+                                    </div>
+
+                                    <div class="collapse" id="comments<%= item.data._id %>">
+                                        <div class="border-top pt-2">
+                                            <% item.data.comments.forEach(comment => { %>
+                                                <div class="mb-2 p-2 bg-light rounded">
+                                                    <strong class="small"><%= comment.authorName %></strong>
+                                                    <p class="mb-0 small"><%= comment.content %></p>
+                                                </div>
+                                            <% }) %>
+                                            <form action="/feed/<%= item.data._id %>/comment" method="POST" class="mt-2">
+                                                <div class="input-group">
+                                                    <input type="text" name="content" class="form-control form-control-sm" placeholder="Ajouter un commentaire..." required>
+                                                    <button type="submit" class="btn btn-sm btn-primary">Envoyer</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% } else if (item.type === 'job') { %>
+                        <!-- Job Card in Feed -->
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <i class="bi bi-briefcase-fill"></i> Offre d'emploi
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title"><%= item.data.title %></h5>
+                                <p class="text-muted"><i class="bi bi-building"></i> <%= item.data.companyName %></p>
+                                <p class="card-text"><%= item.data.description.substring(0, 150) %>...</p>
+                                <div class="d-flex gap-2 mb-2">
+                                    <span class="badge bg-secondary"><i class="bi bi-geo-alt"></i> <%= item.data.location %></span>
+                                    <% const jobTypes = {'full-time': 'CDI', 'part-time': 'Temps partiel', 'contract': 'Contrat', 'freelance': 'Freelance'} %>
+                                    <span class="badge bg-secondary"><%= jobTypes[item.data.jobType] %></span>
+                                </div>
+                                <a href="/jobs/<%= item.data._id %>" class="btn btn-primary btn-sm">Voir l'offre</a>
+                            </div>
+                        </div>
+                    <% } %>
+                <% }) %>
+            </div>
+
+            <!-- Right Sidebar - Suggestions -->
+            <div class="col-lg-3 d-none d-lg-block">
+                <div class="card sticky-top" style="top: 80px;">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Suggestions</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted">Complétez votre profil pour apparaître dans les recommandations.</p>
+                        <a href="/jobs" class="btn btn-sm btn-outline-primary w-100 mb-2">
+                            <i class="bi bi-briefcase"></i> Voir les offres
+                        </a>
+                        <a href="/messages" class="btn btn-sm btn-outline-primary w-100">
+                            <i class="bi bi-chat-dots"></i> Messagerie
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Post Modal -->
+    <div class="modal fade" id="createPostModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" action="/feed/create" method="POST" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Créer une publication</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <textarea name="content" class="form-control" rows="5" placeholder="Que voulez-vous partager ?" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Image (optionnel)</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Publier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Like functionality
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const postId = this.dataset.postId;
+                try {
+                    const response = await fetch(`/feed/${postId}/like`, { method: 'POST' });
+                    const data = await response.json();
+                    
+                    const icon = this.querySelector('i');
+                    const count = this.querySelector('.like-count');
+                    
+                    if (icon.classList.contains('bi-heart')) {
+                        icon.classList.remove('bi-heart');
+                        icon.classList.add('bi-heart-fill', 'text-danger');
+                    } else {
+                        icon.classList.remove('bi-heart-fill', 'text-danger');
+                        icon.classList.add('bi-heart');
+                    }
+                    
+                    count.textContent = data.likes;
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+        });
+    </script>
+
+    <script>
+        // Search profiles
+        let searchTimeout;
+        function searchProfiles() {
+            const query = document.getElementById('searchInput').value.trim();
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                document.getElementById('searchResults').style.display = 'none';
+                return;
+            }
+            
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/search/profiles?q=${encodeURIComponent(query)}`);
+                    const results = await response.json();
+                    
+                    const container = document.getElementById('resultsContainer');
+                    document.getElementById('searchResults').style.display = 'block';
+                    
+                    if (results.length === 0) {
+                        container.innerHTML = '<p class="text-muted text-center py-3">Aucun résultat trouvé</p>';
+                        return;
+                    }
+                    
+                    container.innerHTML = results.map(user => `
+                        <a href="/dashboard/${user._id}" class="text-decoration-none">
+                            <div class="d-flex align-items-center p-2 border rounded mb-2 hover-bg-light" style="cursor: pointer;">
+                                <img src="${user.photo_url}" onerror="this.src='/images/default-avatar.png'" 
+                                     class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                <div>
+                                    <div class="fw-bold text-dark">
+                                        ${user.accountType === 'company' ? user.companyName : user.prenom + ' ' + user.nom}
+                                        ${user.accountType === 'company' ? '<i class="bi bi-building text-primary ms-1"></i>' : '<i class="bi bi-person text-success ms-1"></i>'}
+                                    </div>
+                                    <small class="text-muted">${user.email}</small>
+                                </div>
+                            </div>
+                        </a>
+                    `).join('');
+                } catch (err) {
+                    console.error(err);
+                }
+            }, 300);
+        }
+        
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+        }
+
+        // Fix Bootstrap modal backdrop issue
+        setInterval(() => {
+            // Remove aria-hidden from all modals
+            document.querySelectorAll('.modal').forEach(modal => {
+                if (modal.hasAttribute('aria-hidden')) {
+                    modal.removeAttribute('aria-hidden');
+                }
+                // Force pointer events
+                modal.style.pointerEvents = 'auto';
+            });
+            
+            // Fix modal backdrop
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.style.pointerEvents = 'none';
+            });
+        }, 100);
+    </script>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

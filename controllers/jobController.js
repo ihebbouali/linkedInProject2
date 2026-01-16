@@ -1,6 +1,8 @@
 const Job = require('../models/Job');
 const JobApplication = require('../models/JobApplication');
 const User = require('../models/User');
+const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
 
 // Get all jobs
 exports.getAllJobs = async (req, res) => {
@@ -65,7 +67,51 @@ exports.applyForJob = async (req, res) => {
             $push: { applications: application._id }
         });
 
-        res.status(200).json({ message: 'Application envoyée avec succès!' });
+        // Create conversation between applicant and company
+        const job = await Job.findById(req.params.jobId).populate('company');
+        const applicant = await User.findById(req.session.userId);
+        const applicantName = `${applicant.prenom} ${applicant.nom}`;
+        const companyName = job.company.companyName;
+
+        const conversation = new Conversation({
+            participants: [
+                { user: req.session.userId, userName: applicantName },
+                { user: job.company._id, userName: companyName }
+            ],
+            jobApplication: application._id,
+            lastMessage: `${applicantName} a postulé pour ${job.title}`
+        });
+
+        await conversation.save();
+
+        // Send initial message with cover letter
+        const initialMessage = new Message({
+            conversation: conversation._id,
+            sender: req.session.userId,
+            senderName: applicantName,
+            content: req.body.coverLetter || `Bonjour, je suis intéressé(e) par le poste de ${job.title}.`
+        });
+
+        await initialMessage.save();
+
+        // Send CV automatically if user has one
+        if (applicant.cv_url) {
+            const cvMessage = new Message({
+                conversation: conversation._id,
+                sender: req.session.userId,
+                senderName: applicantName,
+                content: 'Mon CV',
+                attachment: {
+                    type: 'cv',
+                    filename: 'CV.pdf',
+                    path: applicant.cv_url,
+                    size: 0
+                }
+            });
+            await cvMessage.save();
+        }
+
+        res.status(200).json({ message: 'Application envoyée avec succès!', conversationId: conversation._id });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Erreur lors de la candidature' });

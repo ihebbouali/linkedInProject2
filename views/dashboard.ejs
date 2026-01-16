@@ -3,48 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de Bord - Plateforme d'emploi</title>
+    <title>Tableau de Bord - TalentFlow</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🔷</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/notifications.js"></script>
 </head>
 <body class="bg-light">
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-white bg-white shadow-sm sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="/dashboard">
-                <i class="bi bi-briefcase-fill"></i> JobConnect
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard"><i class="bi bi-person-circle"></i> Mon Profil</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/jobs"><i class="bi bi-briefcase"></i> Offres d'emploi</a>
-                    </li>
-                    <% if (user.accountType === 'company') { %>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/jobs/my-jobs/list"><i class="bi bi-building"></i> Mes Offres</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/jobs/post-job/form"><i class="bi bi-plus-circle"></i> Publier une Offre</a>
-                        </li>
-                    <% } %>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/auth/logout"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <%- include('partials/navbar', { user, activePage: 'dashboard' }) %>
 
-    <div class="container py-5">
+    <div class="page-container">
+        <div class="content-wrapper">
+            <div class="container py-5">
         <!-- Profile Header -->
         <div class="profile-header mb-4">
             <div class="row align-items-center">
@@ -64,6 +37,14 @@
                         <p class="profile-email"><%= user.email %></p>
                         <span class="account-badge badge-personal"><i class="bi bi-person"></i> Compte Personnel</span>
                     <% } %>
+                    <div class="mt-3">
+                        <a href="/dashboard/followers" class="text-decoration-none me-3">
+                            <strong><%= user.followers ? user.followers.length : 0 %></strong> Abonnés
+                        </a>
+                        <a href="/dashboard/following" class="text-decoration-none">
+                            <strong><%= user.following ? user.following.length : 0 %></strong> Abonnements
+                        </a>
+                    </div>
                     <% if (user.accountType === 'personal') { %>
                         <button class="btn btn-light btn-sm mt-3" data-bs-toggle="modal" data-bs-target="#viewCvModal">
                             <i class="bi bi-file-pdf"></i> Voir mon CV
@@ -163,21 +144,12 @@
                 <% } else { %>
                     <!-- Company Dashboard -->
                     <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <div class="card bg-primary text-white">
-                                <div class="card-body text-center">
-                                    <h3 class="card-title"><i class="bi bi-briefcase"></i> Mes Offres</h3>
-                                    <p class="card-text">Gérez vos offres d'emploi</p>
-                                    <a href="/jobs/my-jobs/list" class="btn btn-light btn-sm">Voir</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <div class="card bg-success text-white">
-                                <div class="card-body text-center">
-                                    <h3 class="card-title"><i class="bi bi-plus-circle"></i> Nouvelle Offre</h3>
-                                    <p class="card-text">Publier une offre d'emploi</p>
-                                    <a href="/jobs/post-job/form" class="btn btn-light btn-sm">Publier</a>
+                        <div class="col-md-12 mb-4">
+                            <div class="card bg-gradient">
+                                <div class="card-body text-center text-white">
+                                    <h3 class="card-title"><i class="bi bi-briefcase"></i> Mes Offres d'emploi</h3>
+                                    <p class="card-text">Gérez toutes vos offres publiées et consultez les candidatures</p>
+                                    <a href="/jobs/my-jobs/list" class="btn btn-light btn-lg mt-2"><i class="bi bi-building"></i> Accéder à mes offres</a>
                                 </div>
                             </div>
                         </div>
@@ -365,6 +337,128 @@
             </div>
         </div>
     <% } %>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// Fix modal aria-hidden and focus issues - AGGRESSIVE APPROACH
+(function() {
+    // Remove any existing backdrops immediately
+    const removeBackdrops = () => {
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    };
+    
+    // Remove aria-hidden from all modals
+    const removeAriaHidden = () => {
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.removeAttribute('aria-hidden');
+        });
+    };
+    
+    removeBackdrops();
+    removeAriaHidden();
+    
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initModals);
+    } else {
+        initModals();
+    }
+    
+    function initModals() {
+        removeBackdrops();
+        removeAriaHidden();
+        
+        // Get all modals
+        const modals = document.querySelectorAll('.modal');
+        
+        modals.forEach(modal => {
+            // Add event listeners
+            modal.addEventListener('show.bs.modal', function(e) {
+                removeBackdrops();
+                removeAriaHidden();
+            });
+            
+            modal.addEventListener('shown.bs.modal', function(e) {
+                removeAriaHidden();
+                // Force focus on first input
+                const firstInput = this.querySelector('input:not([type="hidden"]), textarea, select');
+                if (firstInput) {
+                    setTimeout(() => {
+                        firstInput.focus();
+                    }, 100);
+                }
+            });
+            
+            modal.addEventListener('hidden.bs.modal', function(e) {
+                removeBackdrops();
+                removeAriaHidden();
+            });
+            
+            modal.addEventListener('hide.bs.modal', function(e) {
+                removeBackdrops();
+            });
+        });
+        
+        // Aggressive MutationObserver - remove aria-hidden instantly
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'aria-hidden') {
+                    const modal = mutation.target;
+                    if (modal.classList.contains('modal')) {
+                        // Remove it immediately, always
+                        modal.removeAttribute('aria-hidden');
+                    }
+                }
+            });
+        });
+        
+        // Observe all modals
+        modals.forEach(modal => {
+            observer.observe(modal, { 
+                attributes: true, 
+                attributeFilter: ['aria-hidden', 'class']
+            });
+        });
+        
+        // Also watch for new modals being added
+        const bodyObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1 && node.classList && node.classList.contains('modal')) {
+                        node.removeAttribute('aria-hidden');
+                        observer.observe(node, { 
+                            attributes: true, 
+                            attributeFilter: ['aria-hidden', 'class']
+                        });
+                    }
+                });
+            });
+        });
+        
+        bodyObserver.observe(document.body, { childList: true, subtree: true });
+    }
+    
+    // Continuous cleanup every 100ms
+    setInterval(function() {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        const openModals = document.querySelectorAll('.modal.show');
+        
+        // Always remove aria-hidden from all modals
+        removeAriaHidden();
+        
+        // Clean up orphaned backdrops
+        if (backdrops.length > 0 && openModals.length === 0) {
+            removeBackdrops();
+        }
+    }, 100);
+})();
+</script>
 
 </body>
 </html>
