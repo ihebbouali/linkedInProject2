@@ -2,6 +2,14 @@
   "name": "talentflow",
   "version": "1.0.0",
   "description": "Plateforme professionnelle de recrutement et networking",
+  "homepage": "https://github.com/ihebbouali/linkedInProject2#readme",
+  "bugs": {
+    "url": "https://github.com/ihebbouali/linkedInProject2/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ihebbouali/linkedInProject2.git"
+  },
   "license": "ISC",
   "author": "",
   "type": "commonjs",
