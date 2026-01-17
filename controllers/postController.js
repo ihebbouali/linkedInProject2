@@ -2,14 +2,12 @@ const Post = require('../models/Post');
 const Job = require('../models/Job');
 const User = require('../models/User');
 
-// Get feed (posts + jobs)
 exports.getFeed = async (req, res) => {
     try {
         const user = await User.findById(req.session.userId);
         const posts = await Post.find().populate('author', 'nom prenom companyName accountType photo_url').sort({ createdAt: -1 }).limit(20);
         const jobs = await Job.find().populate('company', 'companyName').sort({ createdAt: -1 }).limit(10);
 
-        // Combine and sort by date
         const feedItems = [
             ...posts.map(p => ({ type: 'post', data: p, date: p.createdAt })),
             ...jobs.map(j => ({ type: 'job', data: j, date: j.createdAt }))
@@ -22,7 +20,6 @@ exports.getFeed = async (req, res) => {
     }
 };
 
-// Create post
 exports.createPost = async (req, res) => {
     try {
         const { content } = req.body;
@@ -44,7 +41,6 @@ exports.createPost = async (req, res) => {
     }
 };
 
-// Like post
 exports.likePost = async (req, res) => {
     try {
         const post = await Post.findById(req.params.postId);
@@ -64,7 +60,6 @@ exports.likePost = async (req, res) => {
     }
 };
 
-// Comment on post
 exports.commentPost = async (req, res) => {
     try {
         const { content } = req.body;
@@ -88,7 +83,6 @@ exports.commentPost = async (req, res) => {
     }
 };
 
-// Delete post
 exports.deletePost = async (req, res) => {
     try {
         const post = await Post.findById(req.params.postId);

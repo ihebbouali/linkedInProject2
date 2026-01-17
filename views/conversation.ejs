@@ -112,9 +112,6 @@
                                     <i class="bi bi-three-dots-vertical"></i>
                                 </button>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="blockConversation(); return false;">
-                                        <i class="bi bi-x-circle"></i> Bloquer
-                                    </a></li>
                                     <li><a class="dropdown-item text-danger" href="#" onclick="deleteConversation(); return false;">
                                         <i class="bi bi-trash"></i> Supprimer la conversation
                                     </a></li>
@@ -163,14 +160,6 @@
                                                     <% } %>
                                                 </div>
                                             </a>
-                                        <% } %>
-                                        
-                                        <% if (msg.sender._id.toString() === user._id.toString() && !msg.deleted) { %>
-                                            <div class="message-actions">
-                                                <button class="message-action-btn" onclick="deleteMessage('<%= msg._id %>')">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </div>
                                         <% } %>
                                     <% } %>
                                     </div>
@@ -363,36 +352,6 @@
             }
         });
 
-        // Delete message
-        async function deleteMessage(messageId) {
-            if (!confirm('Voulez-vous vraiment supprimer ce message ?')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/messages/${messageId}/delete`, {
-                    method: 'DELETE'
-                });
-
-                const data = await response.json();
-                
-                if (response.ok) {
-                    // Update UI
-                    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
-                    const bubble = messageDiv.querySelector('.message-bubble');
-                    bubble.classList.add('message-deleted');
-                    bubble.innerHTML = '<i class="bi bi-trash"></i> Ce message a été supprimé';
-                    
-                    showNotification('success', 'Succès', 'Message supprimé');
-                } else {
-                    showNotification('error', 'Erreur', data.message || 'Erreur lors de la suppression');
-                }
-            } catch (error) {
-                console.error(error);
-                showNotification('error', 'Erreur', 'Erreur lors de la suppression');
-            }
-        }
-
         // Receive new message
         socket.on('newMessage', (data) => {
             if (data.conversationId === conversationId) {
@@ -429,32 +388,6 @@
                 scrollToBottom();
             }
         });
-        
-        // Block user
-        async function blockConversation() {
-            const otherUserId = '<%= otherUser?._id %>';
-            if (!confirm('Voulez-vous vraiment bloquer cet utilisateur ?')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/messages/block/${otherUserId}`, {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    showNotification('success', 'Succès', 'Conversation bloquée');
-                    setTimeout(() => window.location.href = '/messages', 1500);
-                } else {
-                    showNotification('error', 'Erreur', data.message || 'Erreur');
-                }
-            } catch (error) {
-                console.error(error);
-                showNotification('error', 'Erreur', 'Erreur lors du blocage');
-            }
-        }
         
         // Delete conversation
         async function deleteConversation() {

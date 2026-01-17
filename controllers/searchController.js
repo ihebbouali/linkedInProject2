@@ -9,8 +9,6 @@ exports.searchProfiles = async (req, res) => {
             return res.json([]);
         }
         
-        const currentUser = await User.findById(req.session.userId);
-        
         // Search by name, company name, or email
         const users = await User.find({
             _id: { $ne: req.session.userId }, // Exclude current user
@@ -24,12 +22,7 @@ exports.searchProfiles = async (req, res) => {
         .select('nom prenom companyName email accountType photo_url')
         .limit(10);
         
-        // Filter out blocked users
-        const filteredUsers = users.filter(user => 
-            !currentUser.blockedUsers.some(blockedId => blockedId.toString() === user._id.toString())
-        );
-        
-        res.json(filteredUsers);
+        res.json(users);
     } catch (err) {
         console.error(err);
         res.json([]);

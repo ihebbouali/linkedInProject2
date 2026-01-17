@@ -99,15 +99,7 @@
                 </div>
 
                 <!-- Application Summary -->
-                <% if (user.accountType === 'personal') { %>
-                    <div class="card bg-primary-light">
-                        <div class="card-body">
-                            <h5 class="card-title"><i class="bi bi-lightbulb"></i> Conseil</h5>
-                            <p>Avant de postuler, assurez-vous que votre profil est à jour avec vos compétences et expériences!</p>
-                            <a href="/dashboard" class="btn btn-sm btn-outline-primary w-100">Compléter mon profil</a>
-                        </div>
-                    </div>
-                <% } else { %>
+                <% if (user.accountType !== 'personal') { %>
                     <div class="card">
                         <div class="card-header">
                             <h5 class="card-title mb-0"><i class="bi bi-people"></i> Candidatures</h5>

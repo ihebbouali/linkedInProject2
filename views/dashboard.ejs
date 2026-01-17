@@ -24,7 +24,7 @@
                 <div class="col-md-3 text-center">
                     <img src="<%= user.photo_url %>" alt="<%= user.prenom %>" class="profile-avatar">
                 </div>
-                <div class="col-md-9">
+                <div class="col-md-6">
                     <% if (user.accountType === 'company') { %>
                         <div class="profile-name"><%= user.companyName %></div>
                         <p class="profile-email"><%= user.email %></p>
@@ -37,23 +37,17 @@
                         <p class="profile-email"><%= user.email %></p>
                         <span class="account-badge badge-personal"><i class="bi bi-person"></i> Compte Personnel</span>
                     <% } %>
-                    <div class="mt-3">
-                        <a href="/dashboard/followers" class="text-decoration-none me-3">
-                            <strong><%= user.followers ? user.followers.length : 0 %></strong> Abonnés
-                        </a>
-                        <a href="/dashboard/following" class="text-decoration-none">
-                            <strong><%= user.following ? user.following.length : 0 %></strong> Abonnements
-                        </a>
-                    </div>
-                    <% if (user.accountType === 'personal') { %>
-                        <button class="btn btn-light btn-sm mt-3" data-bs-toggle="modal" data-bs-target="#viewCvModal">
-                            <i class="bi bi-file-pdf"></i> Voir mon CV
-                        </button>
-                        <a href="/dashboard/download-cv?mode=download" class="btn btn-light btn-sm mt-3">
-                            <i class="bi bi-download"></i> Télécharger CV
-                        </a>
-                    <% } %>
                 </div>
+                <% if (user.accountType === 'personal') { %>
+                <div class="col-md-3 d-flex flex-column align-items-end gap-2">
+                    <button class="btn btn-light btn-sm w-100" data-bs-toggle="modal" data-bs-target="#viewCvModal">
+                        <i class="bi bi-file-pdf"></i> Voir mon CV
+                    </button>
+                    <a href="/dashboard/download-cv?mode=download" class="btn btn-light btn-sm w-100">
+                        <i class="bi bi-download"></i> Télécharger CV
+                    </a>
+                </div>
+                <% } %>
             </div>
         </div>
 
@@ -143,17 +137,6 @@
                     </div>
                 <% } else { %>
                     <!-- Company Dashboard -->
-                    <div class="row">
-                        <div class="col-md-12 mb-4">
-                            <div class="card bg-gradient">
-                                <div class="card-body text-center text-white">
-                                    <h3 class="card-title"><i class="bi bi-briefcase"></i> Mes Offres d'emploi</h3>
-                                    <p class="card-text">Gérez toutes vos offres publiées et consultez les candidatures</p>
-                                    <a href="/jobs/my-jobs/list" class="btn btn-light btn-lg mt-2"><i class="bi bi-building"></i> Accéder à mes offres</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     <div class="card">
                         <div class="card-header">
                             <h5 class="card-title mb-0"><i class="bi bi-building"></i> Informations Entreprise</h5>
@@ -175,9 +158,10 @@
                                     <% } %>
                                 </p>
                             </div>
-                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editProfileModal">
-                                <i class="bi bi-pencil"></i> Modifier
-                            </button>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Description</label>
+                                <p><%= user.summary || 'Aucune description ajoutée' %></p>
+                            </div>
                         </div>
                     </div>
                 <% } %>
@@ -221,6 +205,10 @@
                         <div class="mb-3">
                             <label class="form-label">Site web</label>
                             <input type="url" name="companyWebsite" class="form-control" value="<%= user.companyWebsite %>">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="summary" class="form-control" rows="4" placeholder="Décrivez votre entreprise..."><%= user.summary %></textarea>
                         </div>
                     <% } %>
                     <div class="mb-3">

@@ -46,29 +46,9 @@
                         <span class="account-badge badge-personal"><i class="bi bi-person"></i> Compte Personnel</span>
                     <% } %>
                     <div class="mt-3">
-                        <% if (isFollowing) { %>
-                            <button class="btn btn-outline-primary me-2" onclick="unfollowUser()" id="followBtn">
-                                <i class="bi bi-check-circle"></i> Suivi
-                            </button>
-                        <% } else { %>
-                            <button class="btn btn-primary me-2" onclick="followUser()" id="followBtn">
-                                <i class="bi bi-plus-circle"></i> Suivre
-                            </button>
-                        <% } %>
-                        <button class="btn btn-success me-2" onclick="sendMessage()">
-                            <i class="bi bi-chat-dots"></i> Message
+                        <button class="btn btn-primary" onclick="sendMessage()">
+                            <i class="bi bi-chat-dots"></i> Envoyer un message
                         </button>
-                        <button class="btn btn-danger" onclick="blockUser()">
-                            <i class="bi bi-x-circle"></i> Bloquer
-                        </button>
-                    </div>
-                    <div class="mt-3">
-                        <a href="/dashboard/<%= profileUser._id %>/followers" class="text-decoration-none me-3">
-                            <strong><%= profileUser.followers ? profileUser.followers.length : 0 %></strong> Abonnés
-                        </a>
-                        <a href="/dashboard/<%= profileUser._id %>/following" class="text-decoration-none">
-                            <strong><%= profileUser.following ? profileUser.following.length : 0 %></strong> Abonnements
-                        </a>
                     </div>
                 </div>
             </div>
@@ -198,24 +178,6 @@
 
     function sendMessage() {
         window.location.href = '/messages/start/<%= profileUser._id %>';
-    }
-
-    function blockUser() {
-        if (confirm('Voulez-vous vraiment bloquer cet utilisateur ?')) {
-            fetch('/messages/block/<%= profileUser._id %>', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                showNotification(data.message, 'success');
-                setTimeout(() => window.location.href = '/dashboard', 1500);
-            })
-            .catch(err => {
-                console.error(err);
-                showNotification('Erreur lors du blocage', 'error');
-            });
-        }
     }
 </script>
 

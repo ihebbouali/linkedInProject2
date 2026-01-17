@@ -1,16 +1,12 @@
-// Notification System - Modern and Elegant
 function showNotification(type, title, message) {
-    // Remove existing notification
     const existing = document.querySelector('.notification');
     if (existing) {
         existing.remove();
     }
 
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     
-    // Icon based on type
     const icons = {
         'success': '<i class="bi bi-check-circle-fill notification-icon"></i>',
         'error': '<i class="bi bi-x-circle-fill notification-icon"></i>',
@@ -31,7 +27,6 @@ function showNotification(type, title, message) {
     
     document.body.appendChild(notification);
     
-    // Auto remove after 5 seconds
     setTimeout(() => {
         if (notification.parentElement) {
             notification.style.animation = 'slideOut 0.3s ease';
@@ -40,7 +35,6 @@ function showNotification(type, title, message) {
     }, 5000);
 }
 
-// Slide out animation
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideOut {
@@ -52,7 +46,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Replace all alerts and confirms with notifications
 window.showSuccess = (message) => showNotification('success', 'Succès', message);
 window.showError = (message) => showNotification('error', 'Erreur', message);
 window.showWarning = (message) => showNotification('warning', 'Attention', message);

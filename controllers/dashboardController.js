@@ -5,7 +5,7 @@ const path = require('path');
 
 exports.getDashboard = async (req, res) => {
     try {
-        const user = await User.findById(req.session.userId).populate('followers following', 'nom prenom companyName accountType');
+        const user = await User.findById(req.session.userId);
         res.render('dashboard', { user, pageTitle: 'Mon Profil' });
     } catch (err) {
         res.redirect('/auth/login');
@@ -15,24 +15,19 @@ exports.getDashboard = async (req, res) => {
 exports.getUserProfile = async (req, res) => {
     try {
         const currentUser = await User.findById(req.session.userId);
-        const profileUser = await User.findById(req.params.userId).populate('followers following', 'nom prenom companyName accountType');
+        const profileUser = await User.findById(req.params.userId);
         
         if (!profileUser) {
             return res.redirect('/dashboard');
         }
         
-        // If viewing own profile, redirect to dashboard
         if (req.params.userId === req.session.userId) {
             return res.redirect('/dashboard');
         }
         
-        // Check if current user is following this profile
-        const isFollowing = currentUser.following.includes(req.params.userId);
-        
         res.render('user-profile', { 
             user: currentUser, 
             profileUser, 
-            isFollowing,
             pageTitle: profileUser.accountType === 'company' ? profileUser.companyName : `${profileUser.prenom} ${profileUser.nom}` 
         });
     } catch (err) {
@@ -112,7 +107,6 @@ exports.downloadPDF = async (req, res) => {
         const filePath = path.join(__dirname, '../views/cv-template.ejs');
         const html = await ejs.renderFile(filePath, { user });
 
-        // 1. Lancement optimisé de Puppeteer (évite les blocages)
         const browser = await puppeteer.launch({
             headless: 'new',
             args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -124,7 +118,6 @@ exports.downloadPDF = async (req, res) => {
 
         await browser.close();
 
-        // 2. Gestion du mode : "view" (afficher) ou "download" (télécharger)
         const mode = req.query.mode; 
         const disposition = mode === 'download' ? 'attachment' : 'inline';
 
@@ -139,139 +132,5 @@ exports.downloadPDF = async (req, res) => {
     } catch (err) {
         console.error("Erreur PDF:", err);
         res.status(500).send("Erreur lors de la génération du PDF");
-    }
-};
-// Follow user
-exports.followUser = async (req, res) => {
-    try {
-        const currentUser = await User.findById(req.session.userId);
-        const targetUser = await User.findById(req.params.userId);
-        
-        if (!targetUser) {
-            return res.status(404).json({ message: 'Utilisateur introuvable' });
-        }
-        
-        // Check if already following
-        if (currentUser.following.includes(req.params.userId)) {
-            return res.json({ message: 'Vous suivez d�j� cet utilisateur' });
-        }
-        
-        // Add to following list
-        currentUser.following.push(req.params.userId);
-        await currentUser.save();
-        
-        // Add to followers list
-        targetUser.followers.push(req.session.userId);
-        await targetUser.save();
-        
-        res.json({ message: 'Utilisateur suivi', following: true });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Erreur' });
-    }
-};
-
-// Unfollow user
-exports.unfollowUser = async (req, res) => {
-    try {
-        const currentUser = await User.findById(req.session.userId);
-        const targetUser = await User.findById(req.params.userId);
-        
-        if (!targetUser) {
-            return res.status(404).json({ message: 'Utilisateur introuvable' });
-        }
-        
-        // Remove from following list
-        currentUser.following = currentUser.following.filter(id => id.toString() !== req.params.userId);
-        await currentUser.save();
-        
-        // Remove from followers list
-        targetUser.followers = targetUser.followers.filter(id => id.toString() !== req.session.userId);
-        await targetUser.save();
-        
-        res.json({ message: 'Utilisateur ne sera plus suivi', following: false });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Erreur' });
-    }
-};
-
-// Get followers list
-exports.getFollowers = async (req, res) => {
-    try {
-        const currentUser = await User.findById(req.session.userId);
-        const targetUser = await User.findById(req.params.userId).populate('followers', 'nom prenom companyName accountType email photo_url');
-        
-        if (!targetUser) {
-            return res.redirect('/dashboard');
-        }
-        
-        res.render('followers-list', { 
-            user: currentUser, 
-            profileUser: targetUser, 
-            users: targetUser.followers, 
-            listType: 'followers',
-            pageTitle: 'Abonn�s' 
-        });
-    } catch (err) {
-        console.error(err);
-        res.redirect('/dashboard');
-    }
-};
-
-// Get following list
-exports.getFollowing = async (req, res) => {
-    try {
-        const currentUser = await User.findById(req.session.userId);
-        const targetUser = await User.findById(req.params.userId).populate('following', 'nom prenom companyName accountType email photo_url');
-        
-        if (!targetUser) {
-            return res.redirect('/dashboard');
-        }
-        
-        res.render('followers-list', { 
-            user: currentUser, 
-            profileUser: targetUser, 
-            users: targetUser.following, 
-            listType: 'following',
-            pageTitle: 'Abonnements' 
-        });
-    } catch (err) {
-        console.error(err);
-        res.redirect('/dashboard');
-    }
-};
-
-// Get own followers
-exports.getOwnFollowers = async (req, res) => {
-    try {
-        const user = await User.findById(req.session.userId).populate('followers', 'nom prenom companyName accountType email photo_url');
-        res.render('followers-list', { 
-            user, 
-            profileUser: user, 
-            users: user.followers, 
-            listType: 'followers',
-            pageTitle: 'Mes Abonnés' 
-        });
-    } catch (err) {
-        console.error(err);
-        res.redirect('/dashboard');
-    }
-};
-
-// Get own following
-exports.getOwnFollowing = async (req, res) => {
-    try {
-        const user = await User.findById(req.session.userId).populate('following', 'nom prenom companyName accountType email photo_url');
-        res.render('followers-list', { 
-            user, 
-            profileUser: user, 
-            users: user.following, 
-            listType: 'following',
-            pageTitle: 'Mes Abonnements' 
-        });
-    } catch (err) {
-        console.error(err);
-        res.redirect('/dashboard');
     }
 };

@@ -4,7 +4,6 @@ const User = require('../models/User');
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
 
-// Get all jobs
 exports.getAllJobs = async (req, res) => {
     try {
         const user = await User.findById(req.session.userId);
@@ -16,7 +15,6 @@ exports.getAllJobs = async (req, res) => {
     }
 };
 
-// Get job details
 exports.getJobDetails = async (req, res) => {
     try {
         const user = await User.findById(req.session.userId);
@@ -29,17 +27,13 @@ exports.getJobDetails = async (req, res) => {
     }
 };
 
-// Apply for a job (Personal accounts only)
 exports.applyForJob = async (req, res) => {
     try {
         const user = await User.findById(req.session.userId);
-        
-        // Check if personal account
         if (user.accountType !== 'personal') {
             return res.status(403).json({ message: 'Seuls les comptes personnels peuvent postuler' });
         }
 
-        // Check if already applied
         const existingApplication = await JobApplication.findOne({
             job: req.params.jobId,
             applicant: req.session.userId
@@ -57,17 +51,13 @@ exports.applyForJob = async (req, res) => {
 
         await application.save();
 
-        // Add application to job
         await Job.findByIdAndUpdate(req.params.jobId, {
             $push: { applications: application._id }
         });
 
-        // Add application to user
         await User.findByIdAndUpdate(req.session.userId, {
             $push: { applications: application._id }
         });
-
-        // Create conversation between applicant and company
         const job = await Job.findById(req.params.jobId).populate('company');
         const applicant = await User.findById(req.session.userId);
         const applicantName = `${applicant.prenom} ${applicant.nom}`;
@@ -84,7 +74,6 @@ exports.applyForJob = async (req, res) => {
 
         await conversation.save();
 
-        // Send initial message with cover letter
         const initialMessage = new Message({
             conversation: conversation._id,
             sender: req.session.userId,
@@ -93,8 +82,6 @@ exports.applyForJob = async (req, res) => {
         });
 
         await initialMessage.save();
-
-        // Send CV automatically if user has one
         if (applicant.cv_url) {
             const cvMessage = new Message({
                 conversation: conversation._id,
@@ -118,7 +105,6 @@ exports.applyForJob = async (req, res) => {
     }
 };
 
-// Get job posting form (Company only)
 exports.getPostJobForm = async (req, res) => {
     try {
         const user = await User.findById(req.session.userId);
@@ -134,7 +120,6 @@ exports.getPostJobForm = async (req, res) => {
     }
 };
 
-// Post a new job (Company only)
 exports.postJob = async (req, res) => {
     try {
         const user = await User.findById(req.session.userId);
@@ -145,13 +130,20 @@ exports.postJob = async (req, res) => {
 
         const { title, description, location, salary, jobType, experienceLevel, skills } = req.body;
 
+        if (salary && (isNaN(salary) || parseFloat(salary) < 0)) {
+            return res.render('post-job', { 
+                user: await User.findById(req.session.userId), 
+                errorMessage: 'Le salaire doit être une valeur numérique positive' 
+            });
+        }
+
         const newJob = new Job({
             title,
             description,
             company: req.session.userId,
             companyName: user.companyName,
             location,
-            salary,
+            salary: salary || null,
             jobType,
             experienceLevel,
             skills: skills ? skills.split(',').map(s => s.trim()) : []
@@ -165,7 +157,6 @@ exports.postJob = async (req, res) => {
     }
 };
 
-// Get company jobs (for managing)
 exports.getCompanyJobs = async (req, res) => {
     try {
         const user = await User.findById(req.session.userId);
@@ -182,7 +173,6 @@ exports.getCompanyJobs = async (req, res) => {
     }
 };
 
-// Get applications for a job
 exports.getJobApplications = async (req, res) => {
     try {
         const user = await User.findById(req.session.userId);
@@ -200,7 +190,6 @@ exports.getJobApplications = async (req, res) => {
     }
 };
 
-// Update application status
 exports.updateApplicationStatus = async (req, res) => {
     try {
         const { status } = req.body;
@@ -218,7 +207,6 @@ exports.updateApplicationStatus = async (req, res) => {
     }
 };
 
-// Delete job
 exports.deleteJob = async (req, res) => {
     try {
         const job = await Job.findById(req.params.jobId);
@@ -228,9 +216,9 @@ exports.deleteJob = async (req, res) => {
         }
 
         await Job.findByIdAndDelete(req.params.jobId);
-        res.redirect('/company-jobs');
+        res.redirect('/jobs/my-jobs/list');
     } catch (err) {
         console.error(err);
-        res.redirect('/company-jobs');
+        res.redirect('/jobs/my-jobs/list');
     }
 };

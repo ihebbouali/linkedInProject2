@@ -5,7 +5,6 @@ const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 
-// Config Upload Image
 const storage = multer.diskStorage({
     destination: './public/uploads/',
     filename: function(req, file, cb){
@@ -14,7 +13,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Routes - IMPORTANT: Specific routes MUST come before parameterized routes
 router.get('/', auth, dashboardController.getDashboard);
 router.post('/update', auth, upload.single('photo'), dashboardController.updateProfile);
 
@@ -26,17 +24,6 @@ router.get('/experiences/delete/:id', auth, dashboardController.deleteExperience
 
 router.get('/download-cv', auth, dashboardController.downloadPDF);
 
-// Own followers/following routes
-router.get('/followers', auth, dashboardController.getOwnFollowers);
-router.get('/following', auth, dashboardController.getOwnFollowing);
-
-// Follow routes
-router.post('/follow/:userId', auth, dashboardController.followUser);
-router.post('/unfollow/:userId', auth, dashboardController.unfollowUser);
-router.get('/:userId/followers', auth, dashboardController.getFollowers);
-router.get('/:userId/following', auth, dashboardController.getFollowing);
-
-// This MUST be last - catches any /dashboard/:userId
 router.get('/:userId', auth, dashboardController.getUserProfile);
 
 module.exports = router;

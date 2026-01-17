@@ -10,10 +10,9 @@ const UserSchema = new mongoose.Schema({
         return this.accountType === 'company' ? '/images/default-company.svg' : '/images/default-personal.svg';
     }},
     summary: { type: String }, // À propos
-    companyName: { type: String }, // Pour les comptes entreprise
-    companyWebsite: { type: String }, // Pour les comptes entreprise
+    companyName: { type: String },
+    companyWebsite: { type: String },
     
-    // Tableaux pour les sous-documents
     skills: [{
         title: String,
         level: String
@@ -25,10 +24,7 @@ const UserSchema = new mongoose.Schema({
         endDate: Date,
         description: String
     }],
-    applications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'JobApplication' }],
-    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    applications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'JobApplication' }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);

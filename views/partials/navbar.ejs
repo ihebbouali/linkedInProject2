@@ -33,12 +33,6 @@
                     <span class="badge bg-light text-dark" id="unreadBadge" style="display: none; margin-left: auto;"></span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link <%= activePage === 'blocked' ? 'active' : '' %>" href="/messages/blocked">
-                    <i class="bi bi-x-circle"></i>
-                    <span>Bloqués</span>
-                </a>
-            </li>
             <% if (user.accountType === 'company') { %>
                 <li class="nav-item">
                     <a class="nav-link <%= activePage === 'my-jobs' ? 'active' : '' %>" href="/jobs/my-jobs/list">
